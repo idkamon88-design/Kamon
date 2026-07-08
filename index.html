@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FFE600">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BK Owner">
+<title>Bakso Kamon — Owner v3</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F4EE;color:#111;font-size:14px;-webkit-tap-highlight-color:transparent}
+:root{--Y:#FFE600;--Yd:#E6CF00;--Yl:#FFFDE0;--K:#111;--G:#1B7A2E;--Gl:#E6F4EA;--R:#C0392B;--Rl:#FDECEA;--B:#1565C0;--Bl:#E3F0FF;--O:#E65100;--Ol:#FFF3E0;--bg:#F5F4EE;--bdr:#E0DDD0}
+
+/* LOGIN */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--Y);padding:24px}
+.login-logo{margin-bottom:20px;text-align:center}
+.login-title{font-size:26px;font-weight:800;color:var(--K);letter-spacing:-0.5px;text-align:center}
+.login-sub{font-size:12px;color:#666;margin-top:3px;text-align:center}
+.login-card{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:320px;margin-top:20px;border:2px solid var(--K)}
+.pin-display{display:flex;gap:14px;justify-content:center;margin-bottom:18px}
+.pin-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--K);background:transparent;transition:background .15s}
+.pin-dot.filled{background:var(--K)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.num-btn{padding:15px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;font-size:20px;font-weight:700;cursor:pointer;text-align:center;color:var(--K);font-family:inherit}
+.num-btn:active{background:var(--Y);border-color:var(--K);transform:scale(0.95)}
+.num-btn.del{font-size:15px;background:var(--Rl);border-color:#FFCDD2;color:var(--R)}
+.login-err{color:var(--R);font-size:12px;text-align:center;margin-top:10px;font-weight:700;min-height:16px}
+
+/* APP SHELL */
+.app{max-width:430px;margin:0 auto;background:#fff;min-height:100vh}
+.header{background:var(--Y);padding:0 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;border-bottom:2.5px solid var(--K)}
+.h-brand{display:flex;align-items:center;gap:8px;padding:9px 0}
+.h-text .brand{font-size:14px;font-weight:800;color:var(--K)}
+.h-text .tag{font-size:9px;color:#666;margin-top:1px}
+.badge-owner{background:var(--K);color:var(--Y);font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px}
+.logout-btn{background:none;border:1.5px solid var(--K);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--K);font-family:inherit}
+
+/* NAV */
+.nav{display:flex;background:#fff;border-bottom:2px solid var(--Y);overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:190;align-items:stretch}
+.nav::-webkit-scrollbar{display:none}
+.nav-grp{display:flex;align-items:stretch}
+.nav-sep{width:1.5px;background:var(--bdr);margin:5px 0;flex-shrink:0}
+.nb{padding:8px 10px;border:none;background:none;white-space:nowrap;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;transition:all .15s}
+.nb:hover{background:var(--Yl)}
+.nb.active{color:var(--K);border-bottom-color:var(--Y);background:var(--Yl)}
+.nb .ni{font-size:15px;line-height:1}
+.nb .nl{font-size:10px;font-weight:700;color:#999}
+.nb.active .nl{color:var(--K)}
+
+/* PAGES */
+.page{display:none;padding:12px;padding-bottom:24px}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:#fff;border:1.5px solid var(--bdr);border-radius:12px;padding:13px;margin-bottom:10px}
+.card-y{background:var(--Yl);border-color:var(--Yd)}
+.card-k{background:var(--K);border-color:var(--K)}
+.ct{font-size:10px;color:#888;font-weight:800;margin-bottom:9px;text-transform:uppercase;letter-spacing:0.6px}
+
+/* KPI */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.kpi{background:var(--bg);border-radius:8px;padding:10px;border:1px solid var(--bdr)}
+.kpi.y{background:var(--Y);border-color:var(--Yd)}
+.kpi.k{background:#1a1a1a;border-color:#333}
+.kpi.g{background:var(--Gl);border-color:#A5D6A7}
+.kpi.r{background:var(--Rl);border-color:#FFCDD2}
+.kpi.b{background:var(--Bl);border-color:#90CAF9}
+.kpi.o{background:var(--Ol);border-color:#FFCC80}
+.kpi-l{font-size:10px;color:#888;margin-bottom:3px;line-height:1.3}
+.kpi.y .kpi-l,.kpi.k .kpi-l{color:#666}
+.kpi.k .kpi-l{color:#888}
+.kpi-v{font-size:16px;font-weight:800;color:var(--K)}
+.kpi-v.gy{color:var(--Y)}.kpi-v.gg{color:var(--G)}.kpi-v.gr{color:var(--R)}.kpi-v.gb{color:var(--B)}.kpi-v.go{color:var(--O)}
+.vr{color:var(--R)}.vg{color:var(--G)}.vo{color:var(--O)}.vb{color:var(--B)}.vy{color:var(--Y)}
+.kpi-sub{font-size:10px;color:#aaa;margin-top:2px}
+
+/* FORM */
+label{font-size:12px;color:#666;display:block;margin-bottom:3px;margin-top:9px;font-weight:600}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--bdr);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--K)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--Y);box-shadow:0 0 0 3px rgba(255,230,0,0.25)}
+textarea{resize:vertical;min-height:60px}
+
+/* BUTTONS */
+.btn{width:100%;padding:11px;background:var(--Y);color:var(--K);border:2px solid var(--K);border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;margin-top:9px;font-family:inherit;transition:all .15s}
+.btn:active{background:var(--Yd);transform:scale(0.98)}
+.btn.dark{background:var(--K);color:var(--Y);border-color:var(--K)}
+.btn.out{background:transparent;color:var(--K);border-color:var(--bdr)}
+.btn.red{background:var(--Rl);color:var(--R);border-color:#FFCDD2}
+.btn.green{background:var(--Gl);color:var(--G);border-color:#A5D6A7}
+.btn-sm{width:auto;padding:5px 11px;font-size:11px;margin-top:0;font-weight:700}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.divider{height:2px;background:var(--Y);margin:11px 0;border-radius:2px}
+
+/* TABS */
+.tab-g{display:flex;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:10px;border:1px solid var(--bdr)}
+.tab{flex:1;padding:7px;text-align:center;font-size:11px;border-radius:6px;cursor:pointer;color:#888;border:none;background:none;font-family:inherit;font-weight:700}
+.tab.active{background:var(--Y);color:var(--K);font-weight:800;border:1.5px solid var(--K)}
+
+/* CHART */
+.chart-w{position:relative;width:100%;height:190px}
+.chart-w.tall{height:240px}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.by{background:var(--Y);color:#5A4A00;border:1px solid var(--Yd)}
+.bg{background:var(--Gl);color:#0A4B1A}
+.br{background:var(--Rl);color:#7B1A13}
+.bb{background:var(--Bl);color:#0A3B80}
+.bo{background:var(--Ol);color:#7B3500}
+.bgr{background:var(--bg);color:#555;border:1px solid var(--bdr)}
+
+/* PROGRESS */
+.pb{height:6px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:4px;border:1px solid var(--bdr)}
+.pf{height:100%;background:var(--Y);border-radius:4px;transition:width .4s}
+.pf.g{background:var(--G)}.pf.r{background:var(--R)}.pf.b{background:var(--B)}.pf.o{background:var(--O)}
+
+/* LIST ITEMS */
+.li{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--bdr);gap:8px}
+.li:last-child{border-bottom:none}
+.li-left{flex:1;min-width:0}
+.li-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-sub{font-size:11px;color:#aaa;margin-top:1px}
+.li-right{text-align:right;flex-shrink:0}
+.li-val{font-size:13px;font-weight:800}
+.li-sub2{font-size:10px;color:#aaa;margin-top:1px}
+
+/* RANK */
+.rn{width:22px;height:22px;border-radius:50%;background:var(--bg);color:#888;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.rn.gold{background:var(--Y);color:var(--K);border-color:var(--K)}
+.rn.silver{background:#E0E0E0;color:#555;border-color:#BDBDBD}
+.rn.bronze{background:#FFCCBC;color:#7B3500;border-color:#FFAB91}
+
+/* OUTLET CARD */
+.outlet-card{border:2px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.outlet-card.kritis{border-color:var(--R);background:var(--Rl)}
+.outlet-card.warning{border-color:var(--O);background:var(--Ol)}
+.outlet-card.good{border-color:var(--G);background:var(--Gl)}
+.outlet-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.outlet-name{font-size:14px;font-weight:800}
+.outlet-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+
+/* NOTIF */
+.notif{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:8px;margin-bottom:8px;border:1.5px solid}
+.notif.r{background:var(--Rl);border-color:#FFCDD2}
+.notif.o{background:var(--Ol);border-color:#FFCC80}
+.notif.g{background:var(--Gl);border-color:#A5D6A7}
+.notif-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.notif-text{flex:1}
+.notif-title{font-size:12px;font-weight:800;margin-bottom:2px}
+.notif-sub{font-size:11px;color:#666}
+
+/* SUPPLY FORM */
+.supply-preview{background:var(--Yl);border:2px solid var(--Yd);border-radius:8px;padding:10px;margin-top:8px;display:none}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:var(--K);color:var(--Y);padding:7px 8px;text-align:left;font-weight:700;font-size:11px}
+.tbl td{padding:7px 8px;border-bottom:1px dashed var(--bdr)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:nth-child(even) td{background:var(--bg)}
+
+/* LABA RUGI */
+.pl-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--bdr);font-size:13px}
+.pl-row:last-child{border-bottom:none}
+.pl-l{color:#888}.pl-t{font-weight:800}
+.hl{border-radius:8px;padding:10px;margin:6px 0}
+.hl.y{background:var(--Yl);border:1.5px solid var(--Yd)}
+.hl.g{background:var(--Gl);border:1.5px solid #A5D6A7}
+.hl.b{background:var(--Bl);border:1.5px solid #90CAF9}
+.hl.r{background:var(--Rl);border:1.5px solid #FFCDD2}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--K);color:var(--Y);padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;border:2px solid var(--Y)}
+.toast.show{opacity:1}
+
+.empty{text-align:center;padding:24px 16px;color:#bbb;font-size:13px}
+.section-title{font-size:11px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 8px}
+.aging-bar{height:8px;border-radius:4px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-logo">
+    <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="36" cy="36" r="34" fill="#111" stroke="#111"/>
+      <path d="M18 42 Q36 52 54 42" stroke="#FFE600" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M18 42 L19 47 Q36 58 53 47 L54 42" fill="#FFE600"/>
+      <path d="M29 34 Q28 28 31 24 Q34 20 36 16" stroke="#FFE600" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M36 34 Q35 28 36 24" stroke="#FFE600" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M43 34 Q44 28 41 24 Q38 20 36 16" stroke="#FFE600" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="29" cy="42" r="5" fill="#111" stroke="#FFE600" stroke-width="2"/>
+      <circle cx="43" cy="42" r="5" fill="#111" stroke="#FFE600" stroke-width="2"/>
+      <circle cx="36" cy="39" r="4.5" fill="#111" stroke="#FFE600" stroke-width="2"/>
+    </svg>
+  </div>
+  <div class="login-title">BAKSO KAMON</div>
+  <div class="login-sub">Sistem Distribusi & Outlet — Owner</div>
+  <div class="login-card">
+    <span style="font-size:11px;font-weight:700;color:#888;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">PIN Owner</span>
+    <div class="pin-display" id="pinDisplay">
+      <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="numpad">
+      <button class="num-btn" onclick="pinPress('1')">1</button><button class="num-btn" onclick="pinPress('2')">2</button><button class="num-btn" onclick="pinPress('3')">3</button>
+      <button class="num-btn" onclick="pinPress('4')">4</button><button class="num-btn" onclick="pinPress('5')">5</button><button class="num-btn" onclick="pinPress('6')">6</button>
+      <button class="num-btn" onclick="pinPress('7')">7</button><button class="num-btn" onclick="pinPress('8')">8</button><button class="num-btn" onclick="pinPress('9')">9</button>
+      <button class="num-btn" onclick="pinPress('0')" style="grid-column:2">0</button>
+      <button class="num-btn del" onclick="pinDel()">⌫</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <div style="font-size:11px;color:#aaa;text-align:center;margin-top:8px">Default PIN: 1234</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+<div class="app">
+
+<div class="header">
+  <div class="h-brand">
+    <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="14" fill="#111"/><path d="M7 18 Q15 24 23 18" stroke="#FFE600" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M7 18 L8 21 Q15 27 22 21 L23 18" fill="#FFE600"/><path d="M12 14 Q11 11 13 9 Q15 7 15 5" stroke="#FFE600" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M15 14 Q14 11 15 9" stroke="#FFE600" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M18 14 Q19 11 17 9 Q15 7 15 5" stroke="#FFE600" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="12" cy="18" r="3" fill="#111" stroke="#FFE600" stroke-width="1.5"/><circle cx="18" cy="18" r="3" fill="#111" stroke="#FFE600" stroke-width="1.5"/><circle cx="15" cy="16" r="2.5" fill="#111" stroke="#FFE600" stroke-width="1.5"/></svg>
+    <div class="h-text"><div class="brand">BAKSO KAMON</div><div class="tag">Distribusi & Outlet Management</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:7px">
+    <span class="badge-owner">OWNER</span>
+    <button class="logout-btn" onclick="logout()">Keluar</button>
+  </div>
+</div>
+
+<div class="nav">
+  <!-- GROUP A: MONITORING (paling sering dibuka) -->
+  <div class="nav-grp">
+    <button class="nb active" onclick="showPage('dashboard')" id="nb-dashboard">
+      <span class="ni">📊</span><span class="nl">Bisnis</span>
+    </button>
+    <button class="nb" onclick="showPage('dash2')" id="nb-dash2">
+      <span class="ni">🏪</span><span class="nl">Outlet</span>
+    </button>
+  </div>
+  <div class="nav-sep"></div>
+  <!-- GROUP B: OPERASIONAL HARIAN -->
+  <div class="nav-grp">
+    <button class="nb" onclick="showPage('penjualan')" id="nb-penjualan">
+      <span class="ni">💰</span><span class="nl">Penjualan</span>
+    </button>
+    <button class="nb" onclick="showPage('stok')" id="nb-stok">
+      <span class="ni">📦</span><span class="nl">Stok</span>
+    </button>
+    <button class="nb" onclick="showPage('laba')" id="nb-laba">
+      <span class="ni">📈</span><span class="nl">Laba Rugi</span>
+    </button>
+    <button class="nb" onclick="showPage('laporan')" id="nb-laporan">
+      <span class="ni">🗂️</span><span class="nl">Laporan</span>
+    </button>
+  </div>
+  <div class="nav-sep"></div>
+  <!-- GROUP C: MASTER DATA (jarang diakses) -->
+  <div class="nav-grp">
+    <button class="nb" onclick="showPage('produk')" id="nb-produk">
+      <span class="ni">🍜</span><span class="nl">Produk</span>
+    </button>
+    <button class="nb" onclick="showPage('supply')" id="nb-supply">
+      <span class="ni">🚚</span><span class="nl">Supply</span>
+    </button>
+    <button class="nb" onclick="showPage('outlet')" id="nb-outlet">
+      <span class="ni">🗺️</span><span class="nl">Outlet</span>
+    </button>
+    <button class="nb" onclick="showPage('setting')" id="nb-setting">
+      <span class="ni">⚙️</span><span class="nl">Pengaturan</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD 2 — PERFORMA OUTLET ===== -->
+<div id="page-dash2" class="page">
+  <div class="card card-k" style="border-color:var(--Y)">
+    <div style="font-size:15px;font-weight:800;color:var(--Y);margin-bottom:10px">Performa Outlet</div>
+    <div class="g2" style="margin-bottom:0">
+      <div class="kpi k"><div class="kpi-l">Total Outlet</div><div class="kpi-v gy" id="d2TotalOutlet">0</div></div>
+      <div class="kpi k"><div class="kpi-l">Bermasalah</div><div class="kpi-v" style="color:#EF9A9A" id="d2OutletKritis">0</div><div class="kpi-sub">stok kritis/habis</div></div>
+    </div>
+  </div>
+  <div class="tab-g">
+    <button class="tab active" onclick="switchDash2('hari',this)">Hari</button>
+    <button class="tab" onclick="switchDash2('minggu',this)">Minggu</button>
+    <button class="tab" onclick="switchDash2('bulan',this)">Bulan</button>
+  </div>
+  <div class="card">
+    <div class="ct">📊 Pendapatan BK per Outlet</div>
+    <div class="chart-w"><canvas id="cD2Bar" role="img" aria-label="Performa outlet">Data.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">🥇 Ranking Outlet</div>
+    <div id="d2Ranking"><div class="empty">Belum ada data supply</div></div>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 8px;padding-left:2px">Detail Tiap Outlet</div>
+  <div id="d2OutletCards"><div class="empty">Belum ada outlet terdaftar</div></div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="page-dashboard" class="page active">
+  <div class="card card-k" style="border-color:var(--Y)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="color:var(--Y);font-size:14px;font-weight:800">Ringkasan Hari Ini</div>
+      <div style="font-size:11px;color:#888" id="dashDate"></div>
+    </div>
+    <div class="g2" style="margin-bottom:0">
+      <div class="kpi k"><div class="kpi-l">Pendapatan BK</div><div class="kpi-v gy" id="dbPendapatan">Rp 0</div><div class="kpi-sub">dari harga supply</div></div>
+      <div class="kpi k"><div class="kpi-l">Gross Profit BK</div><div class="kpi-v" style="color:#4CAF50" id="dbProfit">Rp 0</div></div>
+      <div class="kpi k"><div class="kpi-l">Total Omzet Outlet</div><div class="kpi-v" style="color:#90CAF9" id="dbOmzetOutlet">Rp 0</div><div class="kpi-sub">jual ke konsumen</div></div>
+      <div class="kpi k"><div class="kpi-l">Porsi Terjual</div><div class="kpi-v gy" id="dbPorsi">0</div></div>
+    </div>
+  </div>
+
+  <div class="tab-g">
+    <button class="tab active" onclick="switchDash('hari',this)">Hari</button>
+    <button class="tab" onclick="switchDash('minggu',this)">Minggu</button>
+    <button class="tab" onclick="switchDash('bulan',this)">Bulan</button>
+    <button class="tab" onclick="switchDash('tahun',this)">Tahun</button>
+  </div>
+  <div class="g2" id="dashKPI">
+    <div class="kpi y"><div class="kpi-l">Pendapatan BK</div><div class="kpi-v" id="dPendapatan">Rp 0</div></div>
+    <div class="kpi g"><div class="kpi-l">Gross Profit BK</div><div class="kpi-v gg" id="dProfit">Rp 0</div></div>
+    <div class="kpi"><div class="kpi-l">Net Profit BK</div><div class="kpi-v gb" id="dNet">Rp 0</div></div>
+    <div class="kpi"><div class="kpi-l">Net Margin</div><div class="kpi-v" id="dMargin">0%</div></div>
+  </div>
+
+  <!-- NOTIFIKASI KRITIS -->
+  <div class="ct" style="margin-bottom:6px">Notifikasi</div>
+  <div id="dashNotif"><div class="empty" style="padding:14px">Semua outlet dalam kondisi normal</div></div>
+
+  <div class="card">
+    <div class="ct">Performa Outlet</div>
+    <div class="chart-w"><canvas id="cOutletBar" role="img" aria-label="Performa outlet">Data.</canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Tren Pendapatan</div>
+    <div class="chart-w"><canvas id="cTrenDash" role="img" aria-label="Tren">Data.</canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Ranking Outlet</div>
+    <div id="dashRanking"><div class="empty">Belum ada data penjualan</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Stok Gudang BK</div>
+    <div id="dashStokGudang"><div class="empty">Belum ada data stok</div></div>
+  </div>
+</div>
+
+<!-- ===== MASTER OUTLET ===== -->
+<div id="page-outlet" class="page">
+  <div class="card card-y">
+    <div class="ct">Tambah / Edit Outlet</div>
+    <input type="hidden" id="eOid">
+    <label>Nama Outlet</label><input type="text" id="oNama" placeholder="cth: Outlet Pasar Cikurubuk">
+    <label>Alamat / Lokasi</label><input type="text" id="oAlamat" placeholder="cth: Jl. Pasar Baru No.12">
+    <label>Nama PIC / Pemilik</label><input type="text" id="oPIC" placeholder="cth: Bapak Asep">
+    <label>No. HP</label><input type="tel" id="oHP" placeholder="08xx-xxxx-xxxx">
+    <label>Stok Minimum Alert (porsi)</label><input type="number" id="oMinStok" value="10" min="0" placeholder="10">
+    <div id="oPricingSection" style="margin-top:12px;display:none">
+      <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Harga Supply per Produk</div>
+      <div id="oPricingList"></div>
+    </div>
+    <button class="btn dark" onclick="simpanOutlet()" id="bSO">Tambah Outlet</button>
+    <button class="btn out" onclick="resetOutletForm()" id="bCO" style="display:none;margin-top:6px">Batal Edit</button>
+  </div>
+  <div class="card">
+    <div class="ct">Daftar Outlet (<span id="outletCount">0</span>)</div>
+    <div id="dOutlet"><div class="empty">Belum ada outlet terdaftar</div></div>
+  </div>
+</div>
+
+<!-- ===== SUPPLY KE OUTLET ===== -->
+<div id="page-supply" class="page">
+  <div class="card card-y">
+    <div class="ct">Catat Supply ke Outlet</div>
+    <label>Tanggal Supply</label><input type="date" id="sTgl">
+    <label>Outlet Tujuan</label><select id="sOutlet" onchange="updateSupplyProduk()"><option value="">-- Pilih Outlet --</option></select>
+    <label>Produk</label><select id="sProduk" onchange="updateSupplyPreview()"><option value="">-- Pilih Produk --</option></select>
+    <label>Jumlah (porsi)</label><input type="number" id="sJumlah" value="0" min="0" oninput="updateSupplyPreview()">
+    <div class="supply-preview" id="supplyPreview">
+      <div class="row">
+        <div><div style="font-size:11px;color:#888">Harga Supply</div><div id="spHarga" style="font-weight:800;font-size:14px">Rp 0</div></div>
+        <div><div style="font-size:11px;color:#888">Total Nilai Supply</div><div id="spTotal" style="font-weight:800;font-size:14px;color:var(--G)">Rp 0</div></div>
+        <div><div style="font-size:11px;color:#888">HPP BK</div><div id="spHPP" style="font-weight:800;font-size:14px;color:var(--R)">Rp 0</div></div>
+      </div>
+      <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--Yd)">
+        <div style="font-size:11px;color:#888">Gross Profit BK dari supply ini</div>
+        <div id="spGross" style="font-weight:800;font-size:15px;color:var(--G);margin-top:2px">Rp 0</div>
+      </div>
+    </div>
+    <label>Catatan (opsional)</label><input type="text" id="sCatatan" placeholder="cth: Restock rutin">
+    <button class="btn dark" onclick="simpanSupply()">Catat Supply</button>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="ct" style="margin-bottom:0">Riwayat Supply</div>
+      <select id="filterSupplyOutlet" style="width:auto;font-size:11px;padding:4px 8px" onchange="renderRiwayatSupply()"><option value="">Semua Outlet</option></select>
+    </div>
+    <div id="riwayatSupply"><div class="empty">Belum ada supply tercatat</div></div>
+  </div>
+</div>
+
+<!-- ===== INPUT PENJUALAN OUTLET ===== -->
+<div id="page-penjualan" class="page">
+  <div class="card card-y">
+    <div class="ct">Input Penjualan Outlet</div>
+    <label>Tanggal</label><input type="date" id="jTgl">
+    <label>Outlet</label><select id="jOutlet" onchange="updateJualProduk()"><option value="">-- Pilih Outlet --</option></select>
+    <label>Produk</label><select id="jProduk" onchange="updateJualPreview()"><option value="">-- Pilih Produk --</option></select>
+    <div id="jStokInfo" style="display:none;background:var(--bg);border-radius:8px;padding:8px;margin-top:6px;border:1px solid var(--bdr)">
+      <div class="row">
+        <div><div style="font-size:10px;color:#888">Stok Outlet</div><div id="jStokAda" style="font-weight:800;font-size:15px">0</div></div>
+        <div><div style="font-size:10px;color:#888">Harga Jual</div><div id="jHargaJual" style="font-weight:800;font-size:13px">-</div></div>
+        <div><div style="font-size:10px;color:#888">Harga Supply</div><div id="jHargaSupply" style="font-weight:800;font-size:13px">-</div></div>
+      </div>
+    </div>
+    <label>Jumlah Terjual (porsi)</label><input type="number" id="jTerjual" value="0" min="0" oninput="updateJualPreview()">
+    <div id="jPreview" style="display:none;background:var(--Yl);border:1.5px solid var(--Yd);border-radius:8px;padding:10px;margin-top:8px">
+      <div class="g3" style="margin-bottom:0">
+        <div class="di"><div style="font-size:10px;color:#888">Sisa Stok</div><div id="jSisa" style="font-weight:800;font-size:15px;margin-top:2px">0</div></div>
+        <div class="di"><div style="font-size:10px;color:#888">Omzet Outlet</div><div id="jOmzet" style="font-weight:800;font-size:13px;color:var(--B);margin-top:2px">Rp 0</div></div>
+        <div class="di"><div style="font-size:10px;color:#888">Margin Outlet</div><div id="jMarginOutlet" style="font-weight:800;font-size:13px;color:var(--G);margin-top:2px">Rp 0</div></div>
+      </div>
+    </div>
+    <button class="btn dark" onclick="simpanPenjualan()">Simpan Penjualan</button>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="ct" style="margin-bottom:0">Riwayat Penjualan</div>
+      <select id="filterJualOutlet" style="width:auto;font-size:11px;padding:4px 8px" onchange="renderRiwayatJual()"><option value="">Semua Outlet</option></select>
+    </div>
+    <div id="riwayatJual"><div class="empty">Belum ada data penjualan</div></div>
+  </div>
+</div>
+
+<!-- ===== MONITORING STOK ===== -->
+<div id="page-stok" class="page">
+  <div class="section-title">Stok Gudang Bakso Kamon</div>
+  <div class="card">
+    <div class="ct">Stok Tersedia di Gudang</div>
+    <div id="stokGudang"><div class="empty">Tidak ada data produk</div></div>
+    <button class="btn" onclick="showPage('produk')" style="margin-top:8px">Kelola Produk & Stok Gudang</button>
+  </div>
+
+  <div class="section-title">Stok Per Outlet</div>
+  <div id="stokOutletAll"><div class="empty">Belum ada data outlet</div></div>
+
+  <div class="card">
+    <div class="ct">Analisis Aging Stock</div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px">Stok outlet berdasarkan umur (hari sejak supply terakhir)</div>
+    <div id="agingStock"><div class="empty">Belum ada data</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Restock Alert</div>
+    <div id="restockAlert"><div class="empty" style="color:var(--G)">Semua stok dalam batas aman</div></div>
+  </div>
+</div>
+
+<!-- ===== MASTER PRODUK ===== -->
+<div id="page-produk" class="page">
+  <div class="card card-y">
+    <div class="ct">Tambah / Edit Produk</div>
+    <input type="hidden" id="ePid">
+    <label>Nama Produk</label><input type="text" id="pNama" placeholder="cth: Bakso Biasa">
+    <label>Kategori</label><select id="pKat"><option>Bakso</option><option>Mie</option><option>Minuman</option><option>Frozen</option><option>Lainnya</option></select>
+    <div class="row">
+      <div><label>HPP per Porsi (Rp)</label><input type="number" id="pHPP" placeholder="0" oninput="updateProdukPreview()"></div>
+      <div><label>Harga Jual ke Konsumen (Rp)</label><input type="number" id="pHarga" placeholder="0" oninput="updateProdukPreview()"></div>
+    </div>
+    <label>Stok Awal Gudang (porsi)</label><input type="number" id="pStokGudang" placeholder="0" value="0">
+    <div id="pMPrev" style="display:none;padding:10px;background:var(--Y);border-radius:8px;margin-top:8px;border:1.5px solid var(--K)">
+      <div class="row">
+        <div><span style="font-size:11px;color:#666">Margin BK: </span><span id="pmV" style="font-weight:800"></span></div>
+        <div><span style="font-size:11px;color:#666">Margin%: </span><span id="pmP" style="font-weight:800;color:var(--G)"></span></div>
+      </div>
+    </div>
+    <button class="btn dark" onclick="simpanProduk()" id="bSP">Tambah Produk</button>
+    <button class="btn out" onclick="resetPForm()" id="bCP" style="display:none;margin-top:6px">Batal Edit</button>
+  </div>
+
+  <div class="card">
+    <div class="ct">Tambah Produksi ke Gudang</div>
+    <div class="row">
+      <div><label>Produk</label><select id="produksiProduk"><option value="">-- Pilih --</option></select></div>
+      <div><label>Jumlah (porsi)</label><input type="number" id="produksiJumlah" value="0" min="0"></div>
+    </div>
+    <label>Tanggal Produksi</label><input type="date" id="produksiTgl">
+    <button class="btn" onclick="tambahProduksi()">+ Catat Produksi</button>
+  </div>
+
+  <div class="card">
+    <div class="ct">Daftar Produk</div>
+    <div id="dProduk"><div class="empty">Belum ada produk</div></div>
+  </div>
+</div>
+
+<!-- ===== LABA RUGI ===== -->
+<div id="page-laba" class="page">
+  <div class="tab-g">
+    <button class="tab active" onclick="switchLaba('hari',this)">Hari Ini</button>
+    <button class="tab" onclick="switchLaba('minggu',this)">Minggu</button>
+    <button class="tab" onclick="switchLaba('bulan',this)">Bulan</button>
+  </div>
+  <div class="card">
+    <div class="ct">Laporan Laba Rugi Bakso Kamon</div>
+    <div style="font-size:11px;color:#888;margin-bottom:10px">Pendapatan BK = total nilai supply ke outlet. Profit = pendapatan supply − HPP produksi.</div>
+    <div class="pl-row"><span class="pl-l">Pendapatan dari Supply Outlet</span><span class="pl-t" id="lPendapatan">Rp 0</span></div>
+    <div class="pl-row"><span class="pl-l">(-) HPP / Biaya Produksi</span><span style="font-weight:800;color:var(--R)" id="lHPP">Rp 0</span></div>
+    <div class="hl y">
+      <div style="display:flex;justify-content:space-between"><span style="font-weight:800">Gross Profit BK</span><span style="font-weight:800;color:var(--G);font-size:15px" id="lGross">Rp 0</span></div>
+      <div style="font-size:11px;color:#888;margin-top:3px" id="lGrossM">Gross Margin: 0%</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:#aaa;margin:10px 0 6px;text-transform:uppercase;letter-spacing:0.3px">Biaya Operasional Tetap</div>
+    <div class="pl-row"><span class="pl-l">Sewa</span><span id="lSewa">Rp 0</span></div>
+    <div class="pl-row"><span class="pl-l">Listrik</span><span id="lListrik">Rp 0</span></div>
+    <div class="pl-row"><span class="pl-l">Gaji</span><span id="lGaji">Rp 0</span></div>
+    <div class="pl-row"><span class="pl-l">Gas</span><span id="lGas">Rp 0</span></div>
+    <div class="pl-row"><span class="pl-l">Lain-lain</span><span id="lLain">Rp 0</span></div>
+    <div class="pl-row"><span style="font-weight:800">Total Biaya Tetap</span><span style="font-weight:800;color:var(--R)" id="lTotBiaya">Rp 0</span></div>
+    <div class="hl b" id="lNetBox">
+      <div style="display:flex;justify-content:space-between"><span style="font-weight:800">Net Profit BK</span><span style="font-weight:800;font-size:16px" id="lNet">Rp 0</span></div>
+      <div style="font-size:11px;margin-top:3px" id="lNetM">Net Margin: 0%</div>
+    </div>
+    <div id="lStatus" style="margin-top:8px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:800;border:2px solid"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Kontribusi per Outlet</div>
+    <div id="labaPerOutlet"><div class="empty">Belum ada data</div></div>
+  </div>
+  <div class="card card-y">
+    <div class="ct">Biaya Tetap Bulanan</div>
+    <div class="row"><div><label>Sewa (Rp)</label><input type="number" id="bSewa" placeholder="0"></div><div><label>Listrik (Rp)</label><input type="number" id="bListrik" placeholder="0"></div></div>
+    <div class="row"><div><label>Gaji (Rp)</label><input type="number" id="bGaji" placeholder="0"></div><div><label>Gas (Rp)</label><input type="number" id="bGas" placeholder="0"></div></div>
+    <label>Lain-lain (Rp)</label><input type="number" id="bLain" placeholder="0">
+    <button class="btn dark" onclick="simpanBiaya()">Simpan & Hitung</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn dark" onclick="exportPDFLaba()" style="margin-top:0">📄 PDF</button>
+    <button class="btn" onclick="exportExcelLaba()" style="margin-top:0">📊 Excel</button>
+  </div>
+</div>
+
+<!-- ===== LAPORAN ===== -->
+<div id="page-laporan" class="page">
+  <div class="tab-g">
+    <button class="tab active" onclick="switchLap('minggu',this)">Mingguan</button>
+    <button class="tab" onclick="switchLap('bulan',this)">Bulanan</button>
+    <button class="tab" onclick="switchLap('tahun',this)">Tahunan</button>
+  </div>
+  <div class="g2">
+    <div class="kpi y"><div class="kpi-l">Pendapatan BK</div><div class="kpi-v" id="lapPend">Rp 0</div></div>
+    <div class="kpi g"><div class="kpi-l">Net Profit BK</div><div class="kpi-v gg" id="lapNet">Rp 0</div></div>
+    <div class="kpi"><div class="kpi-l">Total Omzet Outlet</div><div class="kpi-v gb" id="lapOmzetOutlet">Rp 0</div></div>
+    <div class="kpi"><div class="kpi-l">Gross Margin BK</div><div class="kpi-v" id="lapMargin">0%</div></div>
+  </div>
+  <div class="card" style="margin-top:4px">
+    <div class="ct">Tren Pendapatan BK</div>
+    <div class="chart-w"><canvas id="cLapTren" role="img" aria-label="Tren laporan">Data.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">Distribusi Pendapatan per Outlet</div>
+    <div class="chart-w" style="height:200px"><canvas id="cLapPie" role="img" aria-label="Distribusi outlet">Data.</canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">Ranking Outlet — Kontribusi Pendapatan</div>
+    <div id="lapRanking"><div class="empty">Belum ada data</div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Analisis Produk Terlaris</div>
+    <div id="lapProdukTerlaris"><div class="empty">Belum ada data</div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Estimasi Kebutuhan Produksi</div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px">Berdasarkan rata-rata penjualan 7 hari terakhir × 7 hari ke depan</div>
+    <div id="lapEstimasiProduksi"><div class="empty">Minimal 1 minggu data untuk estimasi</div></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn dark" onclick="exportPDFLaporan()" style="margin-top:0">📄 PDF</button>
+    <button class="btn" onclick="exportExcel()" style="margin-top:0">📊 Excel</button>
+    <button class="btn out" onclick="exportCSV()" style="margin-top:0">CSV</button>
+  </div>
+</div>
+
+<!-- ===== PENGATURAN ===== -->
+<div id="page-setting" class="page">
+  <div class="card card-y">
+    <div class="ct">Ganti PIN Owner</div>
+    <label>PIN Baru (4 digit)</label><input type="password" id="newPin" maxlength="4" placeholder="••••" inputmode="numeric">
+    <label>Konfirmasi PIN</label><input type="password" id="confirmPin" maxlength="4" placeholder="••••" inputmode="numeric">
+    <button class="btn dark" onclick="gantiPin()">Ganti PIN Owner</button>
+  </div>
+  <div class="card card-y">
+    <div class="ct">PIN Admin (untuk file admin.html)</div>
+    <label>PIN Admin Baru (4 digit)</label><input type="password" id="newAdminPin" maxlength="4" placeholder="••••" inputmode="numeric">
+    <button class="btn" onclick="gantiPinAdmin()">Ganti PIN Admin</button>
+    <div style="font-size:11px;color:#888;margin-top:6px">PIN Admin saat ini: <span id="showAdminPin">5678</span></div>
+  </div>
+  <div class="card">
+    <div class="ct">Statistik Data</div>
+    <div class="pl-row"><span class="pl-l">Total Outlet</span><span id="setOutlet" class="pl-t">0</span></div>
+    <div class="pl-row"><span class="pl-l">Total Produk</span><span id="setProduk" class="pl-t">0</span></div>
+    <div class="pl-row"><span class="pl-l">Total Supply Tercatat</span><span id="setSupply" class="pl-t">0</span></div>
+    <div class="pl-row"><span class="pl-l">Total Transaksi Penjualan</span><span id="setJual" class="pl-t">0</span></div>
+    <button class="btn" onclick="backupData()" style="background:var(--Gl);color:var(--G);border-color:var(--G)">Export Backup Data (JSON)</button>
+    <button class="btn red" onclick="resetData()" style="margin-top:6px">Reset Semua Data</button>
+  </div>
+</div>
+
+</div><!-- end .app -->
+</div><!-- end #mainApp -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== CORE =====================
+const fmt=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n||0);
+const fmtN=n=>new Intl.NumberFormat('id-ID').format(Math.round(n||0));
+const today=()=>new Date().toISOString().slice(0,10);
+const weekStart=()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d.toISOString().slice(0,10)};
+const monthStart=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'};
+const yearStart=()=>new Date().getFullYear()+'-01-01';
+const daysDiff=(a,b)=>Math.floor((new Date(b)-new Date(a))/(1000*60*60*24));
+
+// ===================== DB =====================
+/**
+ * DB STRUCTURE:
+ * produk[]       : {id, nama, kategori, hpp, hargaJual, stokGudang, aktif}
+ * outlet[]       : {id, nama, alamat, pic, hp, minStok, hargaSupply:{produkId:harga}}
+ * supply[]       : {id, tgl, outletId, produkId, jumlah, hargaSupply, totalNilai, hpp, grossProfit, catatan}
+ * penjualan[]    : {id, tgl, outletId, produkId, terjual, hargaJual, hargaSupply, omzetOutlet, marginOutlet}
+ * produksi[]     : {id, tgl, produkId, jumlah}
+ * biaya          : {sewa, listrik, gaji, gas, lain}
+ */
+let db={produk:[],outlet:[],supply:[],penjualan:[],produksi:[],biaya:{sewa:0,listrik:0,gaji:0,gas:0,lain:0}};
+
+function loadDB(){try{const s=localStorage.getItem('bksV2DB');if(s)db=JSON.parse(s);}catch(e){}}
+function saveDB(){try{localStorage.setItem('bksV2DB',JSON.stringify(db));}catch(e){}}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+
+// ===================== PIN =====================
+const OWNER_PIN_KEY='bk_owner_pin_v2';
+const ADMIN_PIN_KEY='bk_admin_pin';
+let pinInput='';
+function getPin(){return localStorage.getItem(OWNER_PIN_KEY)||'1234';}
+function pinPress(n){if(pinInput.length>=4)return;pinInput+=n;updatePinDots();if(pinInput.length===4)setTimeout(checkPin,150);}
+function pinDel(){pinInput=pinInput.slice(0,-1);updatePinDots();document.getElementById('loginErr').textContent='';}
+function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
+function checkPin(){
+  if(pinInput===getPin()){document.getElementById('loginScreen').style.display='none';document.getElementById('mainApp').style.display='block';init();}
+  else{document.getElementById('loginErr').textContent='PIN salah, coba lagi';pinInput='';updatePinDots();}
+}
+function logout(){if(confirm('Keluar?')){document.getElementById('mainApp').style.display='none';document.getElementById('loginScreen').style.display='flex';pinInput='';updatePinDots();document.getElementById('loginErr').textContent='';}}
+function gantiPin(){const np=document.getElementById('newPin').value,cp=document.getElementById('confirmPin').value;if(np.length!==4||!/^\d{4}$/.test(np)){toast('PIN harus 4 angka!');return;}if(np!==cp){toast('Konfirmasi PIN tidak cocok!');return;}localStorage.setItem(OWNER_PIN_KEY,np);toast('PIN Owner diperbarui!');document.getElementById('newPin').value='';document.getElementById('confirmPin').value='';}
+function gantiPinAdmin(){const np=document.getElementById('newAdminPin').value;if(np.length!==4||!/^\d{4}$/.test(np)){toast('PIN harus 4 angka!');return;}localStorage.setItem(ADMIN_PIN_KEY,np);document.getElementById('showAdminPin').textContent=np;toast('PIN Admin diperbarui!');document.getElementById('newAdminPin').value='';}
+
+// ===================== NAVIGATION =====================
+let activeDash='hari',activeLaba='hari',activeLap='minggu',activeDash2='hari';
+let cOutletBar=null,cTrenDash=null,cLapTren=null,cLapPie=null,cD2Bar=null;
+
+function showPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const nb=document.getElementById('nb-'+p);if(nb)nb.classList.add('active');
+  const renders={
+    dashboard:renderDashboard,
+    dash2:renderDash2,
+    penjualan:renderPenjualanPage,
+    stok:renderStokPage,
+    laporan:renderLaporan,
+    produk:renderProdukPage,
+    supply:renderSupplyPage,
+    outlet:renderOutletPage,
+    setting:renderSetting
+  };
+  if(renders[p])renders[p]();
+  if(p==='laba'){loadBiayaForm();renderLaba();}
+  // scroll active button into view
+  const activeNb=document.getElementById('nb-'+p);
+  if(activeNb)activeNb.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+function switchDash2(t,el){activeDash2=t;document.querySelectorAll('#page-dash2 .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderDash2();}
+function switchDash(t,el){activeDash=t;document.querySelectorAll('#page-dashboard .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderDashboard();}
+function switchLaba(t,el){activeLaba=t;document.querySelectorAll('#page-laba .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderLaba();}
+function switchLap(t,el){activeLap=t;document.querySelectorAll('#page-laporan .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderLaporan();}
+
+// ===================== COMPUTED HELPERS =====================
+function getRange(mode){
+  const t=today();
+  if(mode==='hari')return{from:t,to:t};
+  if(mode==='minggu')return{from:weekStart(),to:t};
+  if(mode==='bulan')return{from:monthStart(),to:t};
+  return{from:yearStart(),to:t};
+}
+
+// Stok outlet = total supply - total penjualan
+function getStokOutlet(outletId, produkId){
+  const totalSupply=db.supply.filter(s=>s.outletId===outletId&&s.produkId===produkId).reduce((a,s)=>a+s.jumlah,0);
+  const totalJual=db.penjualan.filter(j=>j.outletId===outletId&&j.produkId===produkId).reduce((a,j)=>a+j.terjual,0);
+  return Math.max(0,totalSupply-totalJual);
+}
+
+// Stok gudang = stok awal + produksi - supply keluar
+function getStokGudang(produkId){
+  const prod=db.produk.find(p=>p.id===produkId);
+  const stokAwal=prod?prod.stokGudang||0:0;
+  const totalProduksi=db.produksi.filter(p=>p.produkId===produkId).reduce((a,p)=>a+p.jumlah,0);
+  const totalSupply=db.supply.filter(s=>s.produkId===produkId).reduce((a,s)=>a+s.jumlah,0);
+  return Math.max(0,stokAwal+totalProduksi-totalSupply);
+}
+
+// Pendapatan BK = nilai supply (harga supply × qty)
+function calcSupplyStats(from,to){
+  const data=db.supply.filter(s=>s.tgl>=from&&s.tgl<=to);
+  const pendapatan=data.reduce((a,s)=>a+s.totalNilai,0);
+  const hpp=data.reduce((a,s)=>a+s.hpp,0);
+  const gross=pendapatan-hpp;
+  const qty=data.reduce((a,s)=>a+s.jumlah,0);
+  return{pendapatan,hpp,gross,qty,data};
+}
+
+// Omzet outlet = hargaJual × qty terjual (bukan dari BK)
+function calcPenjualanStats(from,to,outletId){
+  let data=db.penjualan.filter(j=>j.tgl>=from&&j.tgl<=to);
+  if(outletId)data=data.filter(j=>j.outletId===outletId);
+  const omzetOutlet=data.reduce((a,j)=>a+j.omzetOutlet,0);
+  const marginOutlet=data.reduce((a,j)=>a+j.marginOutlet,0);
+  const terjual=data.reduce((a,j)=>a+j.terjual,0);
+  return{omzetOutlet,marginOutlet,terjual,data};
+}
+
+function getBiaya(mode){
+  const b=db.biaya;const total=(b.sewa||0)+(b.listrik||0)+(b.gaji||0)+(b.gas||0)+(b.lain||0);
+  if(mode==='hari')return total/30;if(mode==='minggu')return total/4;if(mode==='bulan')return total;if(mode==='tahun')return total*12;return total/30;
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard(){
+  const t=today();
+  const todaySupply=calcSupplyStats(t,t);
+  const todayJual=calcPenjualanStats(t,t);
+  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('dbPendapatan').textContent=fmt(todaySupply.pendapatan);
+  document.getElementById('dbProfit').textContent=fmt(todaySupply.gross);
+  document.getElementById('dbOmzetOutlet').textContent=fmt(todayJual.omzetOutlet);
+  document.getElementById('dbPorsi').textContent=fmtN(todayJual.terjual)+' porsi';
+
+  const r=getRange(activeDash);
+  const ss=calcSupplyStats(r.from,r.to);
+  const biaya=getBiaya(activeDash);
+  const net=ss.gross-biaya;
+  const margin=ss.pendapatan>0?ss.gross/ss.pendapatan*100:0;
+  document.getElementById('dPendapatan').textContent=fmt(ss.pendapatan);
+  document.getElementById('dProfit').textContent=fmt(ss.gross);
+  document.getElementById('dNet').textContent=fmt(net);document.getElementById('dNet').className='kpi-v '+(net>=0?'gb':'gr');
+  document.getElementById('dMargin').textContent=margin.toFixed(1)+'%';
+
+  renderDashNotif();
+  renderDashRanking(r.from,r.to);
+  renderDashStokGudang();
+  renderChartOutletBar(r.from,r.to);
+  renderChartTrenDash(r.from,r.to);
+}
+
+function renderDashNotif(){
+  const el=document.getElementById('dashNotif');const notifs=[];
+  const t=today();
+  db.outlet.forEach(o=>{
+    db.produk.forEach(p=>{
+      const stok=getStokOutlet(o.id,p.id);const minStok=o.minStok||10;
+      if(stok<=0&&hasSupply(o.id,p.id)){notifs.push({type:'r',icon:'🔴',title:'Stok Habis!',sub:`${o.nama} — ${p.nama} sudah habis (0 porsi)`});}
+      else if(stok>0&&stok<=minStok){notifs.push({type:'o',icon:'🟡',title:'Stok Kritis',sub:`${o.nama} — ${p.nama} tersisa ${stok} porsi (min: ${minStok})`});}
+    });
+    // Cek inaktif >3 hari
+    const lastJual=db.penjualan.filter(j=>j.outletId===o.id).sort((a,b)=>b.tgl.localeCompare(a.tgl))[0];
+    if(lastJual&&daysDiff(lastJual.tgl,t)>3){notifs.push({type:'o',icon:'⚠️',title:'Tidak Ada Penjualan',sub:`${o.nama} — tidak ada laporan penjualan ${daysDiff(lastJual.tgl,t)} hari terakhir`});}
+  });
+  if(!notifs.length){el.innerHTML='<div class="notif g"><div class="notif-icon">✅</div><div class="notif-text"><div class="notif-title">Semua Normal</div><div class="notif-sub">Tidak ada alert stok atau penjualan</div></div></div>';return;}
+  el.innerHTML=notifs.map(n=>`<div class="notif ${n.type}"><div class="notif-icon">${n.icon}</div><div class="notif-text"><div class="notif-title">${n.title}</div><div class="notif-sub">${n.sub}</div></div></div>`).join('');
+}
+
+function hasSupply(outletId,produkId){return db.supply.some(s=>s.outletId===outletId&&s.produkId===produkId);}
+
+function renderDashRanking(from,to){
+  const map={};
+  db.supply.filter(s=>s.tgl>=from&&s.tgl<=to).forEach(s=>{
+    const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;
+    if(!map[o.id])map[o.id]={nama:o.nama,pendapatan:0,gross:0};
+    map[o.id].pendapatan+=s.totalNilai;map[o.id].gross+=s.grossProfit;
+  });
+  const arr=Object.values(map).sort((a,b)=>b.pendapatan-a.pendapatan);
+  const el=document.getElementById('dashRanking');
+  if(!arr.length){el.innerHTML='<div class="empty">Belum ada data supply</div>';return;}
+  const rnCls=['gold','silver','bronze'];
+  el.innerHTML=arr.map((o,i)=>`<div class="li"><div class="rn ${rnCls[i]||''}" style="margin-right:4px">${i+1}</div><div class="li-left"><div class="li-name">${o.nama}</div><div class="li-sub">Gross Profit: ${fmt(o.gross)}</div></div><div class="li-right"><div class="li-val">${fmt(o.pendapatan)}</div></div></div>`).join('');
+}
+
+function renderDashStokGudang(){
+  const el=document.getElementById('dashStokGudang');
+  if(!db.produk.length){el.innerHTML='<div class="empty">Belum ada produk</div>';return;}
+  el.innerHTML=db.produk.filter(p=>p.aktif).map(p=>{const stok=getStokGudang(p.id);const cls=stok<=0?'gr':stok<20?'go':'gg';return`<div class="li"><div class="li-left"><div class="li-name">${p.nama}</div></div><div class="li-right"><div class="li-val ${cls}">${fmtN(stok)} porsi</div></div></div>`;}).join('');
+}
+
+function renderChartOutletBar(from,to){
+  const ctx=document.getElementById('cOutletBar').getContext('2d');if(cOutletBar){cOutletBar.destroy();cOutletBar=null;}
+  const map={};
+  db.supply.filter(s=>s.tgl>=from&&s.tgl<=to).forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;if(!map[o.nama])map[o.nama]={pend:0,gross:0};map[o.nama].pend+=s.totalNilai;map[o.nama].gross+=s.grossProfit;});
+  const labels=Object.keys(map);const pend=labels.map(l=>map[l].pend);const gross=labels.map(l=>map[l].gross);
+  cOutletBar=new Chart(ctx,{type:'bar',data:{labels:labels.length?labels:['Belum ada data'],datasets:[{label:'Pendapatan BK',data:pend.length?pend:[0],backgroundColor:'#FFE600',borderColor:'#111',borderWidth:1.5,borderRadius:4},{label:'Gross Profit',data:gross.length?gross:[0],backgroundColor:'#A5D6A7',borderColor:'#1B7A2E',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},scales:{y:{ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1000?(v/1000).toFixed(0)+'rb':''+v,font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderChartTrenDash(from,to){
+  const ctx=document.getElementById('cTrenDash').getContext('2d');if(cTrenDash){cTrenDash.destroy();cTrenDash=null;}
+  const days=[],pArr=[];const d=new Date(from);const end=new Date(to);
+  while(d<=end&&days.length<=30){const ds=d.toISOString().slice(0,10);days.push(ds.slice(5));const ss=calcSupplyStats(ds,ds);pArr.push(ss.pendapatan);d.setDate(d.getDate()+1);}
+  cTrenDash=new Chart(ctx,{type:'line',data:{labels:days,datasets:[{label:'Pendapatan',data:pArr,borderColor:'#111',backgroundColor:'rgba(255,230,0,0.15)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#FFE600',pointBorderColor:'#111',pointBorderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1000?(v/1000).toFixed(0)+'rb':''+v,font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},x:{ticks:{font:{size:10},maxTicksLimit:8},grid:{display:false}}}}});
+}
+
+// ===================== OUTLET =====================
+function renderOutletPage(){
+  renderOutletList();
+  renderOutletPricingForm();
+}
+
+function renderOutletPricingForm(){
+  const container=document.getElementById('oPricingSection');
+  const list=document.getElementById('oPricingList');
+  const eid=document.getElementById('eOid').value;
+  if(!db.produk.length){container.style.display='none';return;}
+  container.style.display='block';
+  const existOutlet=db.outlet.find(o=>o.id===eid);
+  list.innerHTML=db.produk.filter(p=>p.aktif).map(p=>{const cur=existOutlet&&existOutlet.hargaSupply&&existOutlet.hargaSupply[p.id]?existOutlet.hargaSupply[p.id]:'';return`<div class="li" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:7px 0"><div><div style="font-size:12px;font-weight:700">${p.nama}</div><div style="font-size:10px;color:#aaa">HPP: ${fmt(p.hpp)} | Jual: ${fmt(p.hargaJual)}</div></div><input type="number" id="hsp_${p.id}" placeholder="Harga supply" value="${cur}" style="width:130px;font-size:13px;text-align:right;padding:7px 9px"></div>`;}).join('');
+}
+
+function simpanOutlet(){
+  const nama=document.getElementById('oNama').value.trim();if(!nama){toast('Nama outlet wajib diisi!');return;}
+  const eid=document.getElementById('eOid').value;
+  const hargaSupply={};
+  db.produk.filter(p=>p.aktif).forEach(p=>{const v=parseFloat(document.getElementById('hsp_'+p.id)?.value)||0;if(v>0)hargaSupply[p.id]=v;});
+  const data={nama,alamat:document.getElementById('oAlamat').value.trim(),pic:document.getElementById('oPIC').value.trim(),hp:document.getElementById('oHP').value.trim(),minStok:parseInt(document.getElementById('oMinStok').value)||10,hargaSupply};
+  if(eid){const idx=db.outlet.findIndex(o=>o.id===eid);if(idx>=0)db.outlet[idx]={...db.outlet[idx],...data};}
+  else{db.outlet.push({id:'O'+Date.now(),...data});}
+  saveDB();resetOutletForm();renderOutletList();renderDropdownAll();toast(eid?'Outlet diperbarui!':'Outlet ditambahkan!');
+}
+
+function editOutlet(id){
+  const o=db.outlet.find(x=>x.id===id);if(!o)return;
+  document.getElementById('eOid').value=id;document.getElementById('oNama').value=o.nama;document.getElementById('oAlamat').value=o.alamat||'';document.getElementById('oPIC').value=o.pic||'';document.getElementById('oHP').value=o.hp||'';document.getElementById('oMinStok').value=o.minStok||10;
+  document.getElementById('bSO').textContent='Update Outlet';document.getElementById('bCO').style.display='block';
+  renderOutletPricingForm();window.scrollTo(0,0);
+}
+
+function hapusOutlet(id){if(!confirm('Hapus outlet ini? Semua data supply dan penjualan outlet ini ikut terhapus.'))return;db.outlet=db.outlet.filter(o=>o.id!==id);db.supply=db.supply.filter(s=>s.outletId!==id);db.penjualan=db.penjualan.filter(j=>j.outletId!==id);saveDB();renderOutletList();renderDropdownAll();toast('Outlet dihapus');}
+
+function resetOutletForm(){document.getElementById('eOid').value='';document.getElementById('oNama').value='';document.getElementById('oAlamat').value='';document.getElementById('oPIC').value='';document.getElementById('oHP').value='';document.getElementById('oMinStok').value=10;document.getElementById('bSO').textContent='Tambah Outlet';document.getElementById('bCO').style.display='none';renderOutletPricingForm();}
+
+function renderOutletList(){
+  document.getElementById('outletCount').textContent=db.outlet.length;
+  const el=document.getElementById('dOutlet');
+  if(!db.outlet.length){el.innerHTML='<div class="empty">Belum ada outlet. Tambahkan outlet pertama!</div>';return;}
+  el.innerHTML=db.outlet.map(o=>{
+    const totalStok=db.produk.reduce((a,p)=>a+getStokOutlet(o.id,p.id),0);
+    const isKritis=db.produk.some(p=>getStokOutlet(o.id,p.id)<=o.minStok&&getStokOutlet(o.id,p.id)>0);
+    const isHabis=db.produk.some(p=>hasSupply(o.id,p.id)&&getStokOutlet(o.id,p.id)===0);
+    let statCls='bgr',statTxt='Normal';if(isHabis){statCls='br';statTxt='Stok Habis';}else if(isKritis){statCls='bo';statTxt='Stok Kritis';}
+    return`<div class="li"><div class="li-left"><div class="li-name">${o.nama}</div><div class="li-sub">${o.alamat||''} ${o.pic?'| PIC: '+o.pic:''}</div><div style="margin-top:4px"><span class="badge ${statCls}">${statTxt}</span> <span style="font-size:11px;color:#aaa;margin-left:4px">Stok: ${totalStok} porsi</span></div></div><div style="display:flex;gap:6px;margin-left:8px;flex-direction:column"><button class="btn out btn-sm" onclick="editOutlet('${o.id}')">Edit</button><button class="btn red btn-sm" onclick="hapusOutlet('${o.id}')">Hapus</button></div></div>`;
+  }).join('');
+}
+
+// ===================== SUPPLY =====================
+function renderSupplyPage(){
+  renderDropdownAll();renderRiwayatSupply();
+}
+
+function updateSupplyProduk(){
+  const oid=document.getElementById('sOutlet').value;
+  const outlet=db.outlet.find(o=>o.id===oid);
+  const sel=document.getElementById('sProduk');sel.innerHTML='<option value="">-- Pilih Produk --</option>';
+  db.produk.filter(p=>p.aktif).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.nama+(outlet&&outlet.hargaSupply&&outlet.hargaSupply[p.id]?' (Supply: '+fmt(outlet.hargaSupply[p.id])+')':'');sel.appendChild(o);});
+  updateSupplyPreview();
+}
+
+function updateSupplyPreview(){
+  const oid=document.getElementById('sOutlet').value;const pid=document.getElementById('sProduk').value;const jml=parseInt(document.getElementById('sJumlah').value)||0;
+  const outlet=db.outlet.find(o=>o.id===oid);const prod=db.produk.find(p=>p.id===pid);
+  const el=document.getElementById('supplyPreview');
+  if(!outlet||!prod||jml<=0){el.style.display='none';return;}
+  const hargaSupply=outlet.hargaSupply&&outlet.hargaSupply[pid]?outlet.hargaSupply[pid]:prod.hargaJual;
+  const total=hargaSupply*jml;const hpp=prod.hpp*jml;const gross=total-hpp;
+  el.style.display='block';
+  document.getElementById('spHarga').textContent=fmt(hargaSupply)+'/porsi';
+  document.getElementById('spTotal').textContent=fmt(total);
+  document.getElementById('spHPP').textContent=fmt(hpp);
+  document.getElementById('spGross').textContent=fmt(gross)+(total>0?' ('+((gross/total)*100).toFixed(1)+'%)':'');
+}
+
+function simpanSupply(){
+  const tgl=document.getElementById('sTgl').value;const oid=document.getElementById('sOutlet').value;const pid=document.getElementById('sProduk').value;const jml=parseInt(document.getElementById('sJumlah').value)||0;
+  if(!tgl||!oid||!pid||jml<=0){toast('Lengkapi semua data supply!');return;}
+  const outlet=db.outlet.find(o=>o.id===oid);const prod=db.produk.find(p=>p.id===pid);
+  const stokGudang=getStokGudang(pid);
+  if(jml>stokGudang){toast(`Stok gudang tidak cukup! Tersedia: ${stokGudang} porsi`);return;}
+  const hargaSupply=outlet.hargaSupply&&outlet.hargaSupply[pid]?outlet.hargaSupply[pid]:prod.hargaJual;
+  const total=hargaSupply*jml;const hpp=prod.hpp*jml;
+  db.supply.push({id:'S'+Date.now(),tgl,outletId:oid,produkId:pid,jumlah:jml,hargaSupply,totalNilai:total,hpp,grossProfit:total-hpp,catatan:document.getElementById('sCatatan').value.trim()});
+  saveDB();document.getElementById('sJumlah').value=0;document.getElementById('sCatatan').value='';document.getElementById('supplyPreview').style.display='none';renderRiwayatSupply();renderDropdownAll();toast('Supply tercatat!');
+}
+
+function renderRiwayatSupply(){
+  const foid=document.getElementById('filterSupplyOutlet').value;
+  let data=db.supply.slice().sort((a,b)=>b.tgl.localeCompare(a.tgl));
+  if(foid)data=data.filter(s=>s.outletId===foid);
+  const el=document.getElementById('riwayatSupply');
+  if(!data.length){el.innerHTML='<div class="empty">Belum ada supply tercatat</div>';return;}
+  el.innerHTML=data.slice(0,30).map(s=>{const o=db.outlet.find(x=>x.id===s.outletId);const p=db.produk.find(x=>x.id===s.produkId);return`<div class="li"><div class="li-left"><div class="li-name">${o?o.nama:'?'} → ${p?p.nama:'?'}</div><div class="li-sub">${s.tgl} | ${s.jumlah} porsi ${s.catatan?'| '+s.catatan:''}</div></div><div class="li-right"><div class="li-val">${fmt(s.totalNilai)}</div><div class="li-sub2">Gross: ${fmt(s.grossProfit)}</div></div></div>`;}).join('');
+}
+
+// ===================== PENJUALAN OUTLET =====================
+function renderPenjualanPage(){renderDropdownAll();renderRiwayatJual();}
+
+function updateJualProduk(){
+  const oid=document.getElementById('jOutlet').value;
+  const outlet=db.outlet.find(o=>o.id===oid);
+  const sel=document.getElementById('jProduk');sel.innerHTML='<option value="">-- Pilih Produk --</option>';
+  db.produk.filter(p=>p.aktif).forEach(p=>{const stok=getStokOutlet(oid,p.id);const o=document.createElement('option');o.value=p.id;o.textContent=p.nama+' (Stok: '+stok+' porsi)';sel.appendChild(o);});
+  updateJualPreview();
+}
+
+function updateJualPreview(){
+  const oid=document.getElementById('jOutlet').value;const pid=document.getElementById('jProduk').value;const terjual=parseInt(document.getElementById('jTerjual').value)||0;
+  const outlet=db.outlet.find(o=>o.id===oid);const prod=db.produk.find(p=>p.id===pid);
+  if(!outlet||!prod){document.getElementById('jStokInfo').style.display='none';document.getElementById('jPreview').style.display='none';return;}
+  const stok=getStokOutlet(oid,pid);const hargaSupply=outlet.hargaSupply&&outlet.hargaSupply[pid]?outlet.hargaSupply[pid]:prod.hargaJual;
+  document.getElementById('jStokInfo').style.display='block';
+  document.getElementById('jStokAda').textContent=stok+' porsi';document.getElementById('jStokAda').style.color=stok<=0?'#C0392B':stok<10?'#E65100':'#1B7A2E';
+  document.getElementById('jHargaJual').textContent=fmt(prod.hargaJual);document.getElementById('jHargaSupply').textContent=fmt(hargaSupply);
+  if(terjual<=0){document.getElementById('jPreview').style.display='none';return;}
+  const sisa=Math.max(0,stok-terjual);const omzetOutlet=terjual*prod.hargaJual;const marginOutlet=omzetOutlet-(terjual*hargaSupply);
+  document.getElementById('jPreview').style.display='block';
+  document.getElementById('jSisa').textContent=sisa+' porsi';document.getElementById('jSisa').style.color=sisa<=0?'#C0392B':'#111';
+  document.getElementById('jOmzet').textContent=fmt(omzetOutlet);document.getElementById('jMarginOutlet').textContent=fmt(marginOutlet)+(omzetOutlet>0?' ('+((marginOutlet/omzetOutlet)*100).toFixed(1)+'%)':'');
+}
+
+function simpanPenjualan(){
+  const tgl=document.getElementById('jTgl').value;const oid=document.getElementById('jOutlet').value;const pid=document.getElementById('jProduk').value;const terjual=parseInt(document.getElementById('jTerjual').value)||0;
+  if(!tgl||!oid||!pid||terjual<=0){toast('Lengkapi semua data penjualan!');return;}
+  const outlet=db.outlet.find(o=>o.id===oid);const prod=db.produk.find(p=>p.id===pid);
+  const stok=getStokOutlet(oid,pid);
+  if(terjual>stok){toast(`Jumlah terjual (${terjual}) melebihi stok outlet (${stok})!`);return;}
+  const hargaSupply=outlet.hargaSupply&&outlet.hargaSupply[pid]?outlet.hargaSupply[pid]:prod.hargaJual;
+  const omzetOutlet=terjual*prod.hargaJual;const marginOutlet=omzetOutlet-(terjual*hargaSupply);
+  db.penjualan.push({id:'J'+Date.now(),tgl,outletId:oid,produkId:pid,terjual,hargaJual:prod.hargaJual,hargaSupply,omzetOutlet,marginOutlet});
+  saveDB();document.getElementById('jTerjual').value=0;document.getElementById('jPreview').style.display='none';updateJualProduk();renderRiwayatJual();toast('Penjualan tersimpan!');
+}
+
+function renderRiwayatJual(){
+  const foid=document.getElementById('filterJualOutlet').value;
+  let data=db.penjualan.slice().sort((a,b)=>b.tgl.localeCompare(a.tgl));
+  if(foid)data=data.filter(j=>j.outletId===foid);
+  const el=document.getElementById('riwayatJual');
+  if(!data.length){el.innerHTML='<div class="empty">Belum ada data penjualan</div>';return;}
+  el.innerHTML=data.slice(0,30).map(j=>{const o=db.outlet.find(x=>x.id===j.outletId);const p=db.produk.find(x=>x.id===j.produkId);return`<div class="li"><div class="li-left"><div class="li-name">${o?o.nama:'?'} — ${p?p.nama:'?'}</div><div class="li-sub">${j.tgl} | Terjual: ${j.terjual} porsi</div></div><div class="li-right"><div class="li-val">${fmt(j.omzetOutlet)}</div><div class="li-sub2" style="color:var(--G)">Margin outlet: ${fmt(j.marginOutlet)}</div></div></div>`;}).join('');
+}
+
+// ===================== STOK =====================
+function renderStokPage(){
+  renderStokGudangPage();renderStokOutletPage();renderAgingStock();renderRestockAlert();
+}
+
+function renderStokGudangPage(){
+  const el=document.getElementById('stokGudang');
+  if(!db.produk.length){el.innerHTML='<div class="empty">Belum ada produk</div>';return;}
+  el.innerHTML=db.produk.filter(p=>p.aktif).map(p=>{const stok=getStokGudang(p.id);const cls=stok<=0?'gr':stok<20?'go':'gg';return`<div class="li"><div class="li-left"><div class="li-name">${p.nama}</div><div class="li-sub">HPP: ${fmt(p.hpp)}</div></div><div class="li-right"><div class="li-val ${cls}">${fmtN(stok)} porsi</div><div class="li-sub2">${stok<=0?'HABIS':stok<20?'Hampir Habis':'Aman'}</div></div></div>`;}).join('');
+}
+
+function renderStokOutletPage(){
+  const el=document.getElementById('stokOutletAll');
+  if(!db.outlet.length){el.innerHTML='<div class="empty">Belum ada outlet terdaftar</div>';return;}
+  el.innerHTML=db.outlet.map(o=>{
+    const stokItems=db.produk.filter(p=>p.aktif).map(p=>{const stok=getStokOutlet(o.id,p.id);return{p,stok};}).filter(x=>x.stok>0||hasSupply(o.id,x.p.id));
+    const isKritis=stokItems.some(x=>x.stok<=o.minStok&&x.stok>0);const isHabis=stokItems.some(x=>x.stok===0&&hasSupply(o.id,x.p.id));
+    let cardCls='',statusBadge='<span class="badge bg">Normal</span>';
+    if(isHabis){cardCls='kritis';statusBadge='<span class="badge br">Stok Habis</span>';}
+    else if(isKritis){cardCls='warning';statusBadge='<span class="badge bo">Stok Kritis</span>';}
+    const stokRows=stokItems.length?stokItems.map(({p,stok})=>{const cls=stok<=0?'gr':stok<=o.minStok?'go':'gg';const pct=Math.min(100,(stok/(o.minStok*3))*100);return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed #ddd"><span style="font-size:12px">${p.nama}</span><span style="font-size:13px;font-weight:800;color:var(--${cls.replace('g','')||'K'})">${stok} porsi</span></div>`;}).join(''):'<div style="font-size:12px;color:#aaa;text-align:center;padding:8px">Belum ada supply ke outlet ini</div>';
+    return`<div class="outlet-card ${cardCls}"><div class="outlet-header"><div class="outlet-name">${o.nama}</div>${statusBadge}</div>${stokRows}</div>`;
+  }).join('');
+}
+
+function renderAgingStock(){
+  const el=document.getElementById('agingStock');const today_=today();const items=[];
+  db.outlet.forEach(o=>{db.produk.forEach(p=>{if(getStokOutlet(o.id,p.id)<=0)return;const lastSupply=db.supply.filter(s=>s.outletId===o.id&&s.produkId===p.id).sort((a,b)=>b.tgl.localeCompare(a.tgl))[0];if(!lastSupply)return;const age=daysDiff(lastSupply.tgl,today_);items.push({outlet:o.nama,produk:p.nama,stok:getStokOutlet(o.id,p.id),age});});});
+  if(!items.length){el.innerHTML='<div class="empty">Belum ada data stok</div>';return;}
+  items.sort((a,b)=>b.age-a.age);
+  el.innerHTML=items.map(x=>{const cls=x.age>=7?'#C0392B':x.age>=3?'#E65100':'#1B7A2E';const w=Math.min(100,(x.age/10)*100);return`<div class="li"><div class="li-left"><div class="li-name">${x.outlet} — ${x.produk}</div><div class="li-sub">Stok: ${x.stok} porsi</div><div class="aging-bar" style="background:#eee;width:100%"><div style="height:8px;border-radius:4px;width:${w}%;background:${cls}"></div></div></div><div class="li-right"><div style="font-size:15px;font-weight:800;color:${cls}">${x.age} hari</div></div></div>`;}).join('');
+}
+
+function renderRestockAlert(){
+  const el=document.getElementById('restockAlert');const alerts=[];
+  db.outlet.forEach(o=>{db.produk.forEach(p=>{const stok=getStokOutlet(o.id,p.id);if(stok<=o.minStok&&hasSupply(o.id,p.id)){alerts.push({outlet:o.nama,produk:p.nama,stok,min:o.minStok,urgent:stok===0});}});});
+  if(!alerts.length){el.innerHTML='<div class="empty" style="color:var(--G)">Semua stok dalam batas aman</div>';return;}
+  el.innerHTML=alerts.sort((a,b)=>a.stok-b.stok).map(a=>`<div class="notif ${a.urgent?'r':'o'}"><div class="notif-icon">${a.urgent?'🔴':'🟡'}</div><div class="notif-text"><div class="notif-title">${a.urgent?'HABIS':'Kritis'} — ${a.outlet}</div><div class="notif-sub">${a.produk}: sisa ${a.stok} porsi (min: ${a.min})</div></div></div>`).join('');
+}
+
+// ===================== PRODUK =====================
+function renderProdukPage(){renderProdukList();updateProduksiDropdown();}
+
+function simpanProduk(){
+  const nama=document.getElementById('pNama').value.trim();const kat=document.getElementById('pKat').value;const hpp=parseFloat(document.getElementById('pHPP').value)||0;const harga=parseFloat(document.getElementById('pHarga').value)||0;const stokAwal=parseInt(document.getElementById('pStokGudang').value)||0;
+  if(!nama||!hpp||!harga){toast('Lengkapi semua data!');return;}if(harga<=hpp){toast('Harga jual konsumen harus > HPP!');return;}
+  const eid=document.getElementById('ePid').value;
+  if(eid){const idx=db.produk.findIndex(p=>p.id===eid);if(idx>=0)db.produk[idx]={...db.produk[idx],nama,kategori:kat,hpp,hargaJual:harga};}
+  else{db.produk.push({id:'P'+Date.now(),nama,kategori:kat,hpp,hargaJual:harga,stokGudang:stokAwal,aktif:true});}
+  saveDB();resetPForm();renderProdukList();renderDropdownAll();updateProduksiDropdown();toast(eid?'Produk diperbarui!':'Produk ditambahkan!');
+}
+
+function editProduk(id){const p=db.produk.find(x=>x.id===id);if(!p)return;document.getElementById('ePid').value=id;document.getElementById('pNama').value=p.nama;document.getElementById('pKat').value=p.kategori;document.getElementById('pHPP').value=p.hpp;document.getElementById('pHarga').value=p.hargaJual;document.getElementById('pStokGudang').value=p.stokGudang||0;document.getElementById('bSP').textContent='Update Produk';document.getElementById('bCP').style.display='block';updateProdukPreview();}
+function hapusProduk(id){if(!confirm('Hapus produk?'))return;db.produk=db.produk.filter(p=>p.id!==id);saveDB();renderProdukPage();renderDropdownAll();toast('Produk dihapus');}
+function resetPForm(){document.getElementById('ePid').value='';document.getElementById('pNama').value='';document.getElementById('pHPP').value='';document.getElementById('pHarga').value='';document.getElementById('pStokGudang').value=0;document.getElementById('bSP').textContent='Tambah Produk';document.getElementById('bCP').style.display='none';document.getElementById('pMPrev').style.display='none';}
+function updateProdukPreview(){const h=parseFloat(document.getElementById('pHPP').value)||0;const j=parseFloat(document.getElementById('pHarga').value)||0;const el=document.getElementById('pMPrev');if(h>0&&j>0){el.style.display='block';document.getElementById('pmV').textContent=fmt(j-h);document.getElementById('pmP').textContent=((j-h)/j*100).toFixed(1)+'%';}else el.style.display='none';}
+document.getElementById('pHPP').addEventListener('input',updateProdukPreview);document.getElementById('pHarga').addEventListener('input',updateProdukPreview);
+
+function renderProdukList(){
+  const el=document.getElementById('dProduk');if(!db.produk.length){el.innerHTML='<div class="empty">Belum ada produk</div>';return;}
+  el.innerHTML=db.produk.map(p=>`<div class="li"><div class="li-left"><div class="li-name">${p.nama} <span class="badge bgr" style="font-size:10px">${p.kategori}</span></div><div class="li-sub">HPP: ${fmt(p.hpp)} | Jual: ${fmt(p.hargaJual)} | Gudang: ${getStokGudang(p.id)} porsi</div></div><div style="display:flex;gap:5px;margin-left:8px;flex-direction:column"><button class="btn out btn-sm" onclick="editProduk('${p.id}')">Edit</button><button class="btn red btn-sm" onclick="hapusProduk('${p.id}')">Hapus</button></div></div>`).join('');
+}
+
+function updateProduksiDropdown(){
+  const sel=document.getElementById('produksiProduk');sel.innerHTML='<option value="">-- Pilih --</option>';
+  db.produk.filter(p=>p.aktif).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.nama+' (Gudang: '+getStokGudang(p.id)+')';sel.appendChild(o);});
+  document.getElementById('produksiTgl').value=today();
+}
+
+function tambahProduksi(){
+  const pid=document.getElementById('produksiProduk').value;const jml=parseInt(document.getElementById('produksiJumlah').value)||0;const tgl=document.getElementById('produksiTgl').value;
+  if(!pid||jml<=0||!tgl){toast('Lengkapi data produksi!');return;}
+  db.produksi.push({id:'PR'+Date.now(),tgl,produkId:pid,jumlah:jml});
+  saveDB();document.getElementById('produksiJumlah').value=0;renderProdukList();updateProduksiDropdown();toast('Produksi ditambahkan ke gudang!');
+}
+
+// ===================== DASHBOARD 2 — PERFORMA OUTLET =====================
+function renderDash2(){
+  const r=getRange(activeDash2);
+  const totalOutlet=db.outlet.length;
+  const kritis=db.outlet.filter(o=>db.produk.some(p=>hadSupply(o.id,p.id)&&getStokOutlet(o.id,p.id)<=(o.minStok||10))).length;
+  document.getElementById('d2TotalOutlet').textContent=totalOutlet;
+  document.getElementById('d2OutletKritis').textContent=kritis;
+  // Bar chart
+  const ctx=document.getElementById('cD2Bar').getContext('2d');
+  if(cD2Bar){cD2Bar.destroy();cD2Bar=null;}
+  const labels=[],pend=[],gross=[];
+  db.outlet.forEach(o=>{
+    const ss=calcSupplyStats(r.from,r.to);
+    const oSupply=db.supply.filter(s=>s.tgl>=r.from&&s.tgl<=r.to&&s.outletId===o.id);
+    const oPend=oSupply.reduce((a,s)=>a+s.totalNilai,0);
+    const oGross=oSupply.reduce((a,s)=>a+s.grossProfit,0);
+    if(oPend>0||oGross>0){labels.push(o.nama);pend.push(oPend);gross.push(oGross);}
+  });
+  cD2Bar=new Chart(ctx,{type:'bar',data:{labels:labels.length?labels:['Belum ada data'],datasets:[{label:'Pendapatan BK',data:pend.length?pend:[0],backgroundColor:'#FFE600',borderColor:'#111',borderWidth:1.5,borderRadius:4},{label:'Gross Profit',data:gross.length?gross:[0],backgroundColor:'rgba(27,122,46,0.7)',borderColor:'#1B7A2E',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},scales:{y:{ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1e3?(v/1e3).toFixed(0)+'rb':''+v,font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  // Ranking
+  const rankArr=db.outlet.map(o=>{
+    const os=db.supply.filter(s=>s.tgl>=r.from&&s.tgl<=r.to&&s.outletId===o.id);
+    const oj=db.penjualan.filter(j=>j.tgl>=r.from&&j.tgl<=r.to&&j.outletId===o.id);
+    return{nama:o.nama,pend:os.reduce((a,s)=>a+s.totalNilai,0),gross:os.reduce((a,s)=>a+s.grossProfit,0),qty:os.reduce((a,s)=>a+s.jumlah,0),terjual:oj.reduce((a,j)=>a+j.terjual,0),omzetOutlet:oj.reduce((a,j)=>a+j.omzetOutlet,0),marginOutlet:oj.reduce((a,j)=>a+j.marginOutlet,0)};
+  }).sort((a,b)=>b.pend-a.pend);
+  const rnCls=['by','bb','bo','bgr'];
+  const d2r=document.getElementById('d2Ranking');
+  d2r.innerHTML=rankArr.length&&rankArr[0].pend>0?rankArr.map((o,i)=>`
+    <div class="ri"><div class="rn${i===0?' gold':i===1?' silver':i===2?' bronze':''}">${i+1}</div>
+    <div class="ri-i" style="margin-left:6px"><div class="ri-n">${o.nama}</div><div class="ri-s">Supply: ${fmtN(o.qty)} porsi | Terjual: ${fmtN(o.terjual)} porsi</div></div>
+    <div style="text-align:right"><div style="font-size:13px;font-weight:800">${fmt(o.pend)}</div><div style="font-size:10px;color:var(--G);margin-top:1px">Gross: ${fmt(o.gross)}</div></div>
+    </div>`).join(''):'<div class="empty">Belum ada data supply pada periode ini</div>';
+  // Detail outlet cards
+  const d2c=document.getElementById('d2OutletCards');
+  if(!db.outlet.length){d2c.innerHTML='<div class="empty">Belum ada outlet terdaftar</div>';return;}
+  d2c.innerHTML=db.outlet.map(o=>{
+    const os=db.supply.filter(s=>s.tgl>=r.from&&s.tgl<=r.to&&s.outletId===o.id);
+    const oj=db.penjualan.filter(j=>j.tgl>=r.from&&j.tgl<=r.to&&j.outletId===o.id);
+    const oPend=os.reduce((a,s)=>a+s.totalNilai,0);const oGross=os.reduce((a,s)=>a+s.grossProfit,0);
+    const oOmzet=oj.reduce((a,j)=>a+j.omzetOutlet,0);const oMargin=oj.reduce((a,j)=>a+j.marginOutlet,0);const oTerjual=oj.reduce((a,j)=>a+j.terjual,0);
+    const isHabis=db.produk.some(p=>hadSupply(o.id,p.id)&&getStokOutlet(o.id,p.id)===0);
+    const isKritis=db.produk.some(p=>hadSupply(o.id,p.id)&&getStokOutlet(o.id,p.id)<=(o.minStok||10)&&getStokOutlet(o.id,p.id)>0);
+    const statusBadge=isHabis?'<span class="badge br">🔴 Stok Habis</span>':isKritis?'<span class="badge bo">🟡 Kritis</span>':'<span class="badge bg">🟢 Normal</span>';
+    const stokRows=db.produk.filter(p=>p.aktif).map(p=>{const s=getStokOutlet(o.id,p.id);if(s===0&&!hadSupply(o.id,p.id))return'';const sc=s<=0?'vr':s<=(o.minStok||10)?'vo':'vg';return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--bdr);font-size:12px"><span>${p.nama}</span><span class="${sc}" style="font-weight:700">${s} porsi</span></div>`;}).join('');
+    return`<div class="outlet-card ${isHabis?'kritis':isKritis?'warning':'good'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:14px;font-weight:800">${o.nama}</div>${statusBadge}</div>
+      <div class="g2" style="margin-bottom:8px">
+        <div><div style="font-size:10px;color:#777">Pendapatan BK</div><div style="font-size:14px;font-weight:800">${fmt(oPend)}</div></div>
+        <div><div style="font-size:10px;color:#777">Gross Profit BK</div><div style="font-size:14px;font-weight:800;color:var(--G)">${fmt(oGross)}</div></div>
+        <div><div style="font-size:10px;color:#777">Omzet Outlet</div><div style="font-size:13px;font-weight:700;color:var(--B)">${fmt(oOmzet)}</div></div>
+        <div><div style="font-size:10px;color:#777">Margin Outlet</div><div style="font-size:13px;font-weight:700;color:var(--G)">${fmt(oMargin)}</div></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">Stok Saat Ini</div>
+      ${stokRows||'<div style="font-size:12px;color:#aaa;text-align:center;padding:8px">Belum ada supply ke outlet ini</div>'}
+      ${o.alamat||o.pic?`<div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--bdr);font-size:11px;color:#aaa">${o.alamat?'📍 '+o.alamat:''} ${o.pic?'| 👤 '+o.pic:''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ===================== LABA RUGI =====================
+function renderLaba(){
+  const r=getRange(activeLaba);const ss=calcSupplyStats(r.from,r.to);const b=db.biaya;
+  let f=1/30;if(activeLaba==='minggu')f=1/4;if(activeLaba==='bulan')f=1;
+  const sewa=(b.sewa||0)*f,listrik=(b.listrik||0)*f,gaji=(b.gaji||0)*f,gas=(b.gas||0)*f,lain=(b.lain||0)*f;
+  const totB=sewa+listrik+gaji+gas+lain;const net=ss.gross-totB;const netM=ss.pendapatan>0?net/ss.pendapatan*100:0;
+  document.getElementById('lPendapatan').textContent=fmt(ss.pendapatan);document.getElementById('lHPP').textContent=fmt(ss.hpp);document.getElementById('lGross').textContent=fmt(ss.gross);document.getElementById('lGrossM').textContent='Gross Margin: '+(ss.pendapatan>0?(ss.gross/ss.pendapatan*100).toFixed(1):0)+'%';
+  document.getElementById('lSewa').textContent=fmt(sewa);document.getElementById('lListrik').textContent=fmt(listrik);document.getElementById('lGaji').textContent=fmt(gaji);document.getElementById('lGas').textContent=fmt(gas);document.getElementById('lLain').textContent=fmt(lain);document.getElementById('lTotBiaya').textContent=fmt(totB);
+  document.getElementById('lNet').textContent=fmt(net);document.getElementById('lNet').style.color=net>=0?'#1565C0':'#C0392B';document.getElementById('lNetM').textContent='Net Margin: '+netM.toFixed(1)+'%';
+  document.getElementById('lNetBox').className='hl '+(net>=0?'b':'r');
+  const st=document.getElementById('lStatus');
+  if(net>0){st.style.background='#E6F4EA';st.style.color='#0A4B1A';st.style.borderColor='#A5D6A7';st.textContent='UNTUNG — Net Profit '+fmt(net);}
+  else if(net===0){st.style.background='#FFFDE0';st.style.color='#5A4A00';st.style.borderColor='#FFE600';st.textContent='Tepat di titik BEP';}
+  else{st.style.background='#FDECEA';st.style.color='#7B1A13';st.style.borderColor='#FFCDD2';st.textContent='Belum BEP — Rugi '+fmt(Math.abs(net));}
+  // Kontribusi per outlet
+  const map={};db.supply.filter(s=>s.tgl>=r.from&&s.tgl<=r.to).forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;if(!map[o.id])map[o.id]={nama:o.nama,pend:0,gross:0};map[o.id].pend+=s.totalNilai;map[o.id].gross+=s.grossProfit;});
+  const arr=Object.values(map).sort((a,b)=>b.pend-a.pend);
+  const elo=document.getElementById('labaPerOutlet');
+  elo.innerHTML=arr.length?arr.map(o=>`<div class="li"><div class="li-left"><div class="li-name">${o.nama}</div><div class="li-sub">Gross Profit: ${fmt(o.gross)} | Margin: ${o.pend>0?(o.gross/o.pend*100).toFixed(1):0}%</div></div><div class="li-right"><div class="li-val">${fmt(o.pend)}</div></div></div>`).join(''):'<div class="empty">Belum ada data</div>';
+}
+
+function loadBiayaForm(){const b=db.biaya;document.getElementById('bSewa').value=b.sewa||'';document.getElementById('bListrik').value=b.listrik||'';document.getElementById('bGaji').value=b.gaji||'';document.getElementById('bGas').value=b.gas||'';document.getElementById('bLain').value=b.lain||'';}
+function simpanBiaya(){db.biaya={sewa:parseFloat(document.getElementById('bSewa').value)||0,listrik:parseFloat(document.getElementById('bListrik').value)||0,gaji:parseFloat(document.getElementById('bGaji').value)||0,gas:parseFloat(document.getElementById('bGas').value)||0,lain:parseFloat(document.getElementById('bLain').value)||0};saveDB();renderLaba();toast('Biaya tetap tersimpan!');}
+
+// ===================== LAPORAN =====================
+function renderLaporan(){
+  const mode=activeLap;const r=getRange(mode==='minggu'?'minggu':mode==='bulan'?'bulan':'tahun');
+  const ss=calcSupplyStats(r.from,r.to);const biaya=getBiaya(mode==='minggu'?'minggu':mode==='bulan'?'bulan':'tahun');
+  const net=ss.gross-biaya;const jsAll=calcPenjualanStats(r.from,r.to);
+  document.getElementById('lapPend').textContent=fmt(ss.pendapatan);document.getElementById('lapNet').textContent=fmt(net);document.getElementById('lapNet').className='kpi-v '+(net>=0?'gg':'gr');
+  document.getElementById('lapOmzetOutlet').textContent=fmt(jsAll.omzetOutlet);document.getElementById('lapMargin').textContent=(ss.pendapatan>0?(ss.gross/ss.pendapatan*100).toFixed(1):0)+'%';
+  renderChartLapTren(r.from,r.to);renderChartLapPie(r.from,r.to);renderLapRanking(r.from,r.to);renderLapProdukTerlaris(r.from,r.to);renderEstimasiProduksi();
+}
+
+function renderChartLapTren(from,to){
+  const ctx=document.getElementById('cLapTren').getContext('2d');if(cLapTren){cLapTren.destroy();cLapTren=null;}
+  const days=[],pArr=[];const d=new Date(from);const end=new Date(to);
+  while(d<=end&&days.length<=30){const ds=d.toISOString().slice(0,10);days.push(ds.slice(5));pArr.push(calcSupplyStats(ds,ds).pendapatan);d.setDate(d.getDate()+1);}
+  cLapTren=new Chart(ctx,{type:'line',data:{labels:days,datasets:[{label:'Pendapatan',data:pArr,borderColor:'#111',backgroundColor:'rgba(255,230,0,0.15)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#FFE600',pointBorderColor:'#111',pointBorderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1000?(v/1000).toFixed(0)+'rb':''+v,font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},x:{ticks:{font:{size:10},maxTicksLimit:8},grid:{display:false}}}}});
+}
+
+function renderChartLapPie(from,to){
+  const ctx=document.getElementById('cLapPie').getContext('2d');if(cLapPie){cLapPie.destroy();cLapPie=null;}
+  const map={};db.supply.filter(s=>s.tgl>=from&&s.tgl<=to).forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;map[o.nama]=(map[o.nama]||0)+s.totalNilai;});
+  const labels=Object.keys(map);const vals=Object.values(map);
+  cLapPie=new Chart(ctx,{type:'doughnut',data:{labels:labels.length?labels:['Belum ada data'],datasets:[{data:vals.length?vals:[1],backgroundColor:['#FFE600','#111111','#1B7A2E','#1565C0','#C0392B'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:8}}}}});
+}
+
+function renderLapRanking(from,to){
+  const map={};
+  db.supply.filter(s=>s.tgl>=from&&s.tgl<=to).forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;if(!map[o.id])map[o.id]={nama:o.nama,pend:0,gross:0,qty:0};map[o.id].pend+=s.totalNilai;map[o.id].gross+=s.grossProfit;map[o.id].qty+=s.jumlah;});
+  const arr=Object.values(map).sort((a,b)=>b.pend-a.pend);
+  const el=document.getElementById('lapRanking');const rnCls=['gold','silver','bronze'];
+  el.innerHTML=arr.length?arr.map((o,i)=>`<div class="li"><div class="rn ${rnCls[i]||''}">${i+1}</div><div class="li-left" style="margin-left:6px"><div class="li-name">${o.nama}</div><div class="li-sub">Gross Profit: ${fmt(o.gross)} | ${fmtN(o.qty)} porsi</div></div><div class="li-right"><div class="li-val">${fmt(o.pend)}</div></div></div>`).join(''):'<div class="empty">Belum ada data</div>';
+}
+
+function renderLapProdukTerlaris(from,to){
+  const map={};
+  db.penjualan.filter(j=>j.tgl>=from&&j.tgl<=to).forEach(j=>{const p=db.produk.find(x=>x.id===j.produkId);if(!p)return;if(!map[p.nama])map[p.nama]={terjual:0,omzet:0};map[p.nama].terjual+=j.terjual;map[p.nama].omzet+=j.omzetOutlet;});
+  const arr=Object.entries(map).sort((a,b)=>b[1].terjual-a[1].terjual);
+  const el=document.getElementById('lapProdukTerlaris');const rnCls=['gold','silver','bronze'];
+  el.innerHTML=arr.length?arr.map(([n,v],i)=>`<div class="li"><div class="rn ${rnCls[i]||''}">${i+1}</div><div class="li-left" style="margin-left:6px"><div class="li-name">${n}</div><div class="li-sub">Omzet outlet: ${fmt(v.omzet)}</div></div><div class="li-right"><div class="li-val">${fmtN(v.terjual)} porsi</div></div></div>`).join(''):'<div class="empty">Belum ada data penjualan outlet</div>';
+}
+
+function renderEstimasiProduksi(){
+  const d7ago=new Date();d7ago.setDate(d7ago.getDate()-7);const from=d7ago.toISOString().slice(0,10);
+  const map={};
+  db.penjualan.filter(j=>j.tgl>=from&&j.tgl<=today()).forEach(j=>{map[j.produkId]=(map[j.produkId]||0)+j.terjual;});
+  const el=document.getElementById('lapEstimasiProduksi');
+  if(!Object.keys(map).length){el.innerHTML='<div class="empty">Minimal 1 minggu data untuk estimasi</div>';return;}
+  el.innerHTML=Object.entries(map).map(([pid,total])=>{const p=db.produk.find(x=>x.id===pid);if(!p)return'';const rataPerHari=total/7;const est7=Math.ceil(rataPerHari*7);const stokGdg=getStokGudang(pid);const perlu=Math.max(0,est7-stokGdg);return`<div class="li"><div class="li-left"><div class="li-name">${p.nama}</div><div class="li-sub">Rata-rata: ${rataPerHari.toFixed(1)} porsi/hari | Gudang: ${stokGdg} porsi</div></div><div class="li-right"><div class="li-val ${perlu>0?'go':'gg'}">${est7} porsi</div><div class="li-sub2">${perlu>0?'Perlu produksi: '+perlu:'Stok cukup'}</div></div></div>`;}).join('');
+}
+
+// ===================== DROPDOWN SYNC =====================
+function renderDropdownAll(){
+  // Outlet dropdowns
+  ['sOutlet','jOutlet','filterSupplyOutlet','filterJualOutlet'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;const cur=el.value;
+    const isFilter=id.startsWith('filter');
+    el.innerHTML=isFilter?'<option value="">Semua Outlet</option>':'<option value="">-- Pilih Outlet --</option>';
+    db.outlet.forEach(o=>{const opt=document.createElement('option');opt.value=o.id;opt.textContent=o.nama;el.appendChild(opt);});
+    if(cur)el.value=cur;
+  });
+  // Set tanggal default
+  ['sTgl','jTgl'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today();});
+}
+
+// ===================== PENGATURAN =====================
+function renderSetting(){
+  document.getElementById('setOutlet').textContent=db.outlet.length;document.getElementById('setProduk').textContent=db.produk.length;document.getElementById('setSupply').textContent=db.supply.length;document.getElementById('setJual').textContent=db.penjualan.length;
+  document.getElementById('showAdminPin').textContent=localStorage.getItem(ADMIN_PIN_KEY)||'5678';
+}
+function backupData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='BaksoKamon_Backup_'+today()+'.json';a.click();URL.revokeObjectURL(url);toast('Backup diunduh!');}
+function resetData(){if(!confirm('HAPUS SEMUA DATA? Tidak bisa dibatalkan!'))return;if(!confirm('Yakin benar-benar ingin reset?'))return;db={produk:[],outlet:[],supply:[],penjualan:[],produksi:[],biaya:{sewa:0,listrik:0,gaji:0,gas:0,lain:0}};saveDB();toast('Data direset!');renderDashboard();}
+
+// ===================== EXPORT =====================
+function makePDFHeader(doc,title,sub){
+  doc.setFillColor(255,230,0);doc.rect(0,0,210,28,'F');doc.setFillColor(17,17,17);doc.rect(0,26,210,4,'F');
+  doc.setTextColor(17,17,17);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('BAKSO KAMON',14,12);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);doc.text('Bakso Asli Tasikmalaya — Sistem Distribusi & Outlet',14,19);
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(17,17,17);doc.text(title,196,12,{align:'right'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);doc.text(sub,196,19,{align:'right'});
+}
+
+function exportPDFLaba(){
+  try{const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
+  const r=getRange(activeLaba);const ss=calcSupplyStats(r.from,r.to);const b=db.biaya;
+  let f=1/30;if(activeLaba==='minggu')f=1/4;if(activeLaba==='bulan')f=1;
+  const sewa=(b.sewa||0)*f,listrik=(b.listrik||0)*f,gaji=(b.gaji||0)*f,gas=(b.gas||0)*f,lain=(b.lain||0)*f;const totB=sewa+listrik+gaji+gas+lain;const net=ss.gross-totB;const netM=ss.pendapatan>0?net/ss.pendapatan*100:0;
+  makePDFHeader(doc,'Laporan Laba Rugi',r.from+' s/d '+r.to);
+  let y=36;
+  function row(l,v,bold,rgb){doc.setFont('helvetica',bold?'bold':'normal');if(rgb)doc.setTextColor(...rgb);else doc.setTextColor(17,17,17);doc.setFontSize(10);doc.text(l,14,y);doc.text(fmt(v),196,y,{align:'right'});y+=7;}
+  function sep(){doc.setDrawColor(230,220,0);doc.line(14,y,196,y);y+=4;}
+  function sec(t){doc.setFontSize(8);doc.setTextColor(150,140,0);doc.setFont('helvetica','normal');doc.text(t.toUpperCase(),14,y);y+=5;}
+  sec('Pendapatan Bakso Kamon');row('Pendapatan dari Supply ke Outlet',ss.pendapatan);sep();
+  sec('Harga Pokok Produksi');row('(-) HPP Produksi',-ss.hpp,false,[192,57,43]);sep();
+  doc.setFillColor(255,253,224);doc.rect(14,y-2,182,11,'F');doc.setDrawColor(230,206,0);doc.rect(14,y-2,182,11,'D');row('GROSS PROFIT BK',ss.gross,true,[27,122,46]);
+  doc.setFontSize(8);doc.setTextColor(120,120,80);doc.text('Gross Margin: '+(ss.pendapatan>0?(ss.gross/ss.pendapatan*100).toFixed(1):0)+'%',14,y);y+=9;sep();
+  sec('Biaya Operasional (Proporsional)');row('Sewa',-sewa,false,[192,57,43]);row('Listrik',-listrik,false,[192,57,43]);row('Gaji',-gaji,false,[192,57,43]);row('Gas',-gas,false,[192,57,43]);row('Lain-lain',-lain,false,[192,57,43]);sep();row('Total Biaya',-totB,true,[192,57,43]);sep();
+  doc.setFillColor(net>=0?227:253,net>=0?242:235,net>=0?253:232);doc.rect(14,y-2,182,13,'F');
+  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(net>=0?21:192,net>=0?101:57,net>=0?192:43);doc.text('NET PROFIT BK',14,y+7);doc.text(fmt(net),196,y+7,{align:'right'});y+=15;
+  doc.setFontSize(8);doc.setTextColor(120,120,80);doc.text('Net Margin: '+netM.toFixed(1)+'%',14,y);y+=10;
+  // Kontribusi outlet
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(17,17,17);doc.text('Kontribusi per Outlet',14,y);y+=6;
+  const map={};db.supply.filter(s=>s.tgl>=r.from&&s.tgl<=r.to).forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;if(!map[o.id])map[o.id]={nama:o.nama,pend:0,gross:0};map[o.id].pend+=s.totalNilai;map[o.id].gross+=s.grossProfit;});
+  Object.values(map).sort((a,b)=>b.pend-a.pend).forEach(o=>{doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(17,17,17);doc.text(o.nama,14,y);doc.text(fmt(o.pend),130,y,{align:'right'});doc.text('Gross: '+fmt(o.gross),196,y,{align:'right'});y+=7;});
+  doc.setFontSize(7);doc.setTextColor(160,160,140);doc.text('Dicetak: '+new Date().toLocaleString('id-ID'),14,287);doc.text('BAKSO KAMON',196,287,{align:'right'});
+  doc.save('LabaRugi_BK_'+today()+'.pdf');toast('PDF Laba Rugi diunduh!');}catch(e){toast('Gagal buat PDF.');}
+}
+
+function exportPDFLaporan(){
+  try{const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
+  const mode=activeLap;const r=getRange(mode==='minggu'?'minggu':mode==='bulan'?'bulan':'tahun');
+  const ss=calcSupplyStats(r.from,r.to);const biaya=getBiaya(mode);const net=ss.gross-biaya;const netM=ss.pendapatan>0?net/ss.pendapatan*100:0;const js=calcPenjualanStats(r.from,r.to);
+  makePDFHeader(doc,'Laporan Penjualan & Distribusi',r.from+' s/d '+r.to);
+  let y=36;
+  function kbox(l,v,rgb,rbg,x,w){doc.setFillColor(...rbg);doc.rect(x,y,w,16,'F');doc.setDrawColor(17,17,17);doc.rect(x,y,w,16,'D');doc.setTextColor(...rgb);doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text(l.toUpperCase(),x+2,y+5);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text(v,x+2,y+13,{maxWidth:w-3});}
+  kbox('Pendapatan BK',fmt(ss.pendapatan),[17,17,17],[255,230,0],14,43);kbox('Gross Profit',fmt(ss.gross),[255,255,255],[27,122,46],60,43);kbox('Net Profit BK',fmt(net),net>=0?[255,255,255]:[255,255,255],net>=0?[21,101,192]:[192,57,43],106,43);kbox('Omzet Outlet',fmt(js.omzetOutlet),[17,17,17],[227,242,253],152,44);y+=22;
+  doc.setTextColor(17,17,17);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Ranking Outlet',14,y);y+=6;
+  doc.setFillColor(255,230,0);doc.rect(14,y,182,7,'F');doc.setDrawColor(17,17,17);doc.rect(14,y,182,7,'D');doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('No',16,y+5);doc.text('Outlet',26,y+5);doc.text('Porsi',130,y+5,{align:'right'});doc.text('Pendapatan BK',163,y+5,{align:'right'});doc.text('Gross Profit',196,y+5,{align:'right'});y+=10;
+  const map={};db.supply.filter(s=>s.tgl>=r.from&&s.tgl<=r.to).forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);if(!o)return;if(!map[o.id])map[o.id]={nama:o.nama,pend:0,gross:0,qty:0};map[o.id].pend+=s.totalNilai;map[o.id].gross+=s.grossProfit;map[o.id].qty+=s.jumlah;});
+  Object.values(map).sort((a,b)=>b.pend-a.pend).forEach((o,i)=>{if(y>270)return;if(i%2===0){doc.setFillColor(250,249,235);doc.rect(14,y-4,182,8,'F');}doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(17,17,17);doc.text(String(i+1),16,y);doc.text(o.nama,26,y);doc.text(fmtN(o.qty),130,y,{align:'right'});doc.text(fmt(o.pend),163,y,{align:'right'});doc.text(fmt(o.gross),196,y,{align:'right'});y+=8;});
+  doc.setFontSize(7);doc.setTextColor(160,160,140);doc.text('Dicetak: '+new Date().toLocaleString('id-ID'),14,287);doc.text('BAKSO KAMON',196,287,{align:'right'});
+  doc.save('Laporan_BK_'+today()+'.pdf');toast('PDF Laporan diunduh!');}catch(e){toast('Gagal buat PDF.');}
+}
+
+function exportExcel(){
+  try{const wb=XLSX.utils.book_new();
+  // Sheet Supply
+  const wsS=[['Tanggal','Outlet','Produk','Jumlah','Harga Supply','Total Nilai Supply','HPP','Gross Profit BK','Catatan']];
+  db.supply.forEach(s=>{const o=db.outlet.find(x=>x.id===s.outletId);const p=db.produk.find(x=>x.id===s.produkId);wsS.push([s.tgl,o?o.nama:'?',p?p.nama:'?',s.jumlah,s.hargaSupply,s.totalNilai,s.hpp,s.grossProfit,s.catatan||'']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsS),'Supply ke Outlet');
+  // Sheet Penjualan Outlet
+  const wsJ=[['Tanggal','Outlet','Produk','Terjual','Harga Jual Konsumen','Harga Supply','Omzet Outlet','Margin Outlet']];
+  db.penjualan.forEach(j=>{const o=db.outlet.find(x=>x.id===j.outletId);const p=db.produk.find(x=>x.id===j.produkId);wsJ.push([j.tgl,o?o.nama:'?',p?p.nama:'?',j.terjual,j.hargaJual,j.hargaSupply,j.omzetOutlet,j.marginOutlet]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsJ),'Penjualan Outlet');
+  // Sheet Stok Saat Ini
+  const wsStok=[['Outlet','Produk','Stok Outlet','Stok Gudang']];
+  db.outlet.forEach(o=>{db.produk.forEach(p=>{wsStok.push([o.nama,p.nama,getStokOutlet(o.id,p.id),getStokGudang(p.id)]);});});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsStok),'Stok Saat Ini');
+  // Sheet Master
+  const wsPr=[['ID','Nama','Kategori','HPP','Harga Jual Konsumen','Stok Gudang']];
+  db.produk.forEach(p=>wsPr.push([p.id,p.nama,p.kategori,p.hpp,p.hargaJual,getStokGudang(p.id)]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsPr),'Master Produk');
+  XLSX.writeFile(wb,'BaksoKamon_Distribusi_'+today()+'.xlsx');toast('Excel diunduh!');}catch(e){toast('Gagal export.');}
+}
+
+function exportExcelLaba(){
+  try{const wb=XLSX.utils.book_new();const b=db.biaya;
+  ['hari','minggu','bulan'].forEach(mode=>{const r=getRange(mode);const ss=calcSupplyStats(r.from,r.to);let f=1/30;if(mode==='minggu')f=1/4;if(mode==='bulan')f=1;const totB=((b.sewa||0)+(b.listrik||0)+(b.gaji||0)+(b.gas||0)+(b.lain||0))*f;const net=ss.gross-totB;const ws=XLSX.utils.aoa_to_sheet([['BAKSO KAMON — Laba Rugi '+mode.toUpperCase()],['Periode',r.from+' s/d '+r.to],[''],['Pendapatan Supply Outlet',ss.pendapatan],['(-) HPP Produksi',-ss.hpp],['Gross Profit',ss.gross],['Gross Margin %',(ss.pendapatan>0?(ss.gross/ss.pendapatan*100):0).toFixed(1)+'%'],[''],['Biaya Tetap (Proporsional)'],['Total Biaya',-totB],[''],['NET PROFIT',net],['Net Margin %',(ss.pendapatan>0?net/ss.pendapatan*100:0).toFixed(1)+'%']]);XLSX.utils.book_append_sheet(wb,ws,'L/R '+mode);});
+  XLSX.writeFile(wb,'LabaRugi_BK_'+today()+'.xlsx');toast('Excel L/R diunduh!');}catch(e){toast('Gagal export.');}
+}
+
+function exportCSV(){
+  const h='Tanggal,Outlet,Produk,Jumlah Supply,Harga Supply,Total Nilai,HPP,Gross Profit BK\n';
+  const rows=db.supply.map(s=>{const o=db.outlet.find(x=>x.id===s.outletId);const p=db.produk.find(x=>x.id===s.produkId);return[s.tgl,o?o.nama:'?',p?p.nama:'?',s.jumlah,s.hargaSupply,s.totalNilai,s.hpp,s.grossProfit].join(',');}).join('\n');
+  const blob=new Blob([h+rows],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='BaksoKamon_'+today()+'.csv';a.click();URL.revokeObjectURL(url);toast('CSV diunduh!');
+}
+
+// ===================== INIT =====================
+function init(){
+  loadDB();renderDropdownAll();
+  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+  if(!db.produk.length){
+    db.produk=[{id:'P001',nama:'Bakso Biasa',kategori:'Bakso',hpp:8000,hargaJual:15000,stokGudang:0,aktif:true},{id:'P002',nama:'Bakso Urat',kategori:'Bakso',hpp:10000,hargaJual:18000,stokGudang:0,aktif:true},{id:'P003',nama:'Bakso Gepeng',kategori:'Bakso',hpp:9000,hargaJual:16000,stokGudang:0,aktif:true},{id:'P004',nama:'Mie Ayam',kategori:'Mie',hpp:7000,hargaJual:14000,stokGudang:0,aktif:true},{id:'P005',nama:'Es Teh Manis',kategori:'Minuman',hpp:2000,hargaJual:5000,stokGudang:0,aktif:true}];saveDB();
+  }
+  renderDashboard();
+}
+</script>
+</body>
+</html>
